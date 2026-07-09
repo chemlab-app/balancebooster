@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balance Booster - Redox Chemistry</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        chemistry: {
+                            primary: '#1E88E5',
+                            secondary: '#43A047',
+                            accent: '#FFB300',
+                            bg: '#FFFFFF',
+                            dark: '#1e293b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Confetti piece styles */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 0.8;
+            animation: fall 3s ease-out infinite;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-10px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-slate-800 flex flex-col justify-between">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="goToHome()">
+                <div class="p-2 bg-blue-100 rounded-lg text-chemistry-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-chemistry-primary">BALANCE BOOSTER</h1>
+                    <p class="text-xs text-gray-500 font-medium">Matriculation Redox Learning</p>
+                </div>
+            </div>
+
+            <!-- Global Status / Nav Indicators -->
+            <div id="nav-stats" class="hidden md:flex items-center space-x-4">
+                <div class="text-sm">
+                    <span class="text-gray-500">Global Score:</span>
+                    <span id="global-score-badge" class="font-bold text-chemistry-secondary bg-green-50 px-2 py-1 rounded">0/23</span>
+                </div>
+                <div class="h-4 w-px bg-gray-200"></div>
+                <button onclick="resetProgressWithConfirmation()" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-2.5 py-1.5 rounded-md font-semibold transition-colors">
+                    Reset Progress
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONFETTI CONTAINER -->
+    <div id="confetti-container" class="fixed inset-0 pointer-events-none z-50 overflow-hidden hidden"></div>
+
+    <!-- MAIN APP WRAPPER -->
+    <main class="flex-grow max-w-4xl w-full mx-auto p-4 flex flex-col justify-center">
+        
+        <!-- PROGRESS TRACKER COMPONENT (Shown when active in parts) -->
+        <div id="global-progress-container" class="w-full bg-white rounded-xl p-4 shadow-sm border border-gray-200 mb-6 hidden">
+            <div class="flex justify-between items-center mb-2">
+                <span id="current-section-title" class="font-bold text-chemistry-primary text-sm uppercase tracking-wider"></span>
+                <span id="progress-percent" class="text-xs font-semibold bg-blue-50 text-chemistry-primary px-2 py-0.5 rounded-full">0% Done</span>
+            </div>
+            <!-- Progress Bar -->
+            <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                <div id="progress-bar" class="bg-gradient-to-r from-blue-500 to-green-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <!-- Navigation Map Dot Indicators -->
+            <div class="flex justify-between mt-3 text-[10px] text-gray-400 font-semibold px-1">
+                <span class="cursor-pointer hover:text-chemistry-primary transition-colors pr-1" onclick="jumpToPart(1)" id="dot-part-1">Part 1</span>
+                <span class="cursor-pointer hover:text-chemistry-primary transition-colors pr-1" onclick="jumpToPart(2)" id="dot-part-2">Part 2</span>
+                <span class="cursor-pointer hover:text-chemistry-primary transition-colors pr-1" onclick="jumpToPart(3)" id="dot-part-3">Part 3</span>
+                <span class="cursor-pointer hover:text-chemistry-primary transition-colors pr-1" onclick="jumpToPart(4)" id="dot-part-4">Part 4</span>
+                <span class="cursor-pointer hover:text-chemistry-primary transition-colors pr-1" onclick="jumpToPart(5)" id="dot-part-5">Part 5</span>
+                <span class="cursor-pointer hover:text-chemistry-primary transition-colors pr-1" onclick="jumpToPart(6)" id="dot-part-6">Part 6</span>
+                <span class="cursor-pointer hover:text-chemistry-primary transition-colors" onclick="jumpToPart(7)" id="dot-part-7">Final Challenge</span>
+            </div>
+        </div>
+
+        <!-- APP SCREENS CONTAINER -->
+        <div id="screen-container">
+
+            <!-- HOME PAGE -->
+            <div id="screen-home" class="bg-white rounded-2xl shadow-xl p-6 md:p-12 text-center border border-gray-100 animate-fadeIn">
+                <!-- Decorative Elements -->
+                <div class="flex justify-center space-x-6 mb-6 text-5xl">
+                    <span class="animate-bounce" style="animation-delay: 0.1s">🧪</span>
+                    <span class="animate-bounce" style="animation-delay: 0.3s">⚛️</span>
+                    <span class="animate-bounce" style="animation-delay: 0.5s">🔋</span>
+                    <span class="animate-bounce" style="animation-delay: 0.7s">⚡</span>
+                </div>
+                
+                <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-800 mb-2">
+                    <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-green-600">BALANCE BOOSTER</span>
+                </h1>
+                <p class="text-lg md:text-xl font-medium text-slate-600 mb-6">
+                    "Master Redox Balancing Step-by-Step"
+                </p>
+
+                <!-- Informational Alert Box -->
+                <div class="bg-gradient-to-r from-blue-50 to-emerald-50 text-slate-700 max-w-xl mx-auto rounded-xl p-4 border border-blue-100/50 mb-8 text-left text-sm space-y-2">
+                    <p class="font-bold text-slate-800 flex items-center gap-2">
+                        <span>💡</span> Designed for Matriculation Chemistry Students
+                    </p>
+                    <p class="text-slate-600">
+                        Redox equations in acidic medium are balanced using the half-equation method sequentially. Master each stage, and instantly check your inputs to unlock successive stages!
+                    </p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <button onclick="startApp()" class="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 text-lg flex items-center justify-center gap-2">
+                        Start Learning
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <button onclick="toggleInstructionsModal(true)" class="w-full sm:w-auto bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-8 py-4 rounded-xl transition-all duration-200 text-lg">
+                        Instructions Guide
+                    </button>
+                </div>
+
+                <div class="mt-8 text-xs text-gray-400">
+                    Your learning progress is saved locally. You can exit and return anytime!
+                </div>
+            </div>
+
+            <!-- WORKACTIVITY SCREEN -->
+            <div id="screen-activity" class="hidden">
+                <!-- Part Main Box -->
+                <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 md:p-8">
+                    
+                    <!-- Header Info -->
+                    <div class="border-b border-gray-100 pb-4 mb-6">
+                        <span id="part-indicator" class="text-xs font-bold text-chemistry-secondary uppercase tracking-widest bg-green-50 px-3 py-1 rounded-full">Part 1</span>
+                        <h2 id="part-title" class="text-2xl font-extrabold text-slate-800 mt-2">Balance Atom Other Than Oxygen and Hydrogen</h2>
+                        <div class="mt-2 bg-blue-50 text-blue-800 p-3 rounded-lg border border-blue-100 text-sm" id="part-instructions">
+                            Instructions message here
+                        </div>
+                    </div>
+
+                    <!-- Example Panel -->
+                    <div class="bg-slate-50 rounded-xl p-4 mb-6 border border-slate-200/60">
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Example Exercise</span>
+                        <div class="flex flex-wrap items-center gap-2 font-semibold text-lg text-slate-700" id="part-example">
+                            Example here
+                        </div>
+                    </div>
+
+                    <!-- Interactive Questions Area -->
+                    <div class="space-y-6" id="questions-list">
+                        <!-- Questions will dynamically populate here -->
+                    </div>
+
+                    <!-- Feedback Panel for Section Completion -->
+                    <div id="part-success-panel" class="hidden mt-8 bg-green-50 rounded-xl p-6 border border-green-200 text-center animate-fadeIn">
+                        <span class="text-4xl block mb-2">🎉</span>
+                        <h3 class="text-lg font-bold text-green-800 mb-1">Part Completed!</h3>
+                        <p class="text-sm text-green-700 mb-4" id="part-score-message">Your Part Score is 3 out of 3 marks.</p>
+                        <button onclick="goToNextPart()" class="bg-chemistry-secondary hover:bg-green-700 text-white font-bold px-6 py-2.5 rounded-lg transition-colors inline-flex items-center gap-2">
+                            Proceed to Next Part
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- COMPLETION CERTIFICATE SCREEN -->
+            <div id="screen-certificate" class="hidden bg-white rounded-2xl shadow-xl p-6 md:p-12 border border-yellow-200 animate-fadeIn text-center">
+                <div class="max-w-2xl mx-auto">
+                    <!-- Certificate Frame Header -->
+                    <div class="text-6xl mb-4">🏆</div>
+                    <h2 class="text-3xl md:text-5xl font-black text-slate-800 mb-2">CONGRATULATIONS!</h2>
+                    <p class="text-gray-500 font-medium mb-8">You have completed the entire Balance Booster worksheet!</p>
+                    
+                    <!-- Decorative Certificate Core -->
+                    <div class="border-4 border-double border-slate-300 p-6 md:p-8 rounded-xl bg-slate-50 relative my-6">
+                        <div class="absolute top-2 right-2 text-3xl opacity-25">🎓</div>
+                        <div class="absolute bottom-2 left-2 text-3xl opacity-25">🧪</div>
+                        
+                        <p class="text-xs uppercase tracking-widest text-slate-400 font-bold mb-2">Certificate of Achievement</p>
+                        <p class="text-slate-600 text-sm">This is proudly awarded to you for mastering the balancing of</p>
+                        <h3 class="text-xl md:text-2xl font-bold text-chemistry-primary my-3">Redox Half-Equations in Acidic Medium</h3>
+                        
+                        <!-- Score Display -->
+                        <div class="inline-block bg-white border border-slate-200 px-4 py-2 rounded-lg my-3">
+                            <span class="text-xs text-gray-500 block">Overall Mastery Score</span>
+                            <span id="cert-score" class="text-2xl font-black text-chemistry-secondary">23/23 (100%)</span>
+                        </div>
+
+                        <!-- Badge Earned Section -->
+                        <div class="mt-4 flex flex-col items-center">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Rank Achieved</span>
+                            <div class="flex items-center space-x-2 mt-1 bg-white px-4 py-2 rounded-full border shadow-sm">
+                                <span id="cert-badge-icon" class="text-2xl">🏆</span>
+                                <span id="cert-badge-name" class="font-extrabold text-slate-800 tracking-wide">REDOX MASTER</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Restart & Share options -->
+                    <div class="flex flex-col sm:flex-row justify-center gap-4 mt-8">
+                        <button onclick="resetProgressWithConfirmation()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-6 py-3 rounded-xl transition-all">
+                            Restart Worksheet
+                        </button>
+                        <button onclick="goToHome()" class="bg-chemistry-primary hover:bg-blue-600 text-white font-bold px-6 py-3 rounded-xl transition-all">
+                            Back to Home
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- INSTRUCTIONS MODAL -->
+    <div id="instructions-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fadeIn">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <span>📖</span> Redox Balancing Guide (Acidic Medium)
+                </h3>
+                <button onclick="toggleInstructionsModal(false)" class="text-gray-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
+            </div>
+            <div class="p-6 space-y-6 text-sm text-slate-600 leading-relaxed">
+                <p>
+                    Balancing redox reactions by the half-equation method splits a reaction into reduction and oxidation reactions, which are balanced individually and then combined. In an <strong>acidic medium</strong>, follow these precise step-by-step rules:
+                </p>
+
+                <!-- Step Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <h4 class="font-bold text-slate-800 mb-1 flex items-center gap-1.5">
+                            <span class="bg-blue-100 text-blue-700 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">1</span>
+                            Atoms First
+                        </h4>
+                        <p class="text-xs text-slate-600">Balance atoms other than Hydrogen and Oxygen first by multiplying using standard stoichiometric coefficients.</p>
+                    </div>
+
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <h4 class="font-bold text-slate-800 mb-1 flex items-center gap-1.5">
+                            <span class="bg-blue-100 text-blue-700 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">2</span>
+                            Oxygen (O)
+                        </h4>
+                        <p class="text-xs text-slate-600">Balance oxygen atoms by adding <strong>H₂O</strong> molecules to the side deficient in oxygen.</p>
+                    </div>
+
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <h4 class="font-bold text-slate-800 mb-1 flex items-center gap-1.5">
+                            <span class="bg-blue-100 text-blue-700 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">3</span>
+                            Hydrogen (H)
+                        </h4>
+                        <p class="text-xs text-slate-600">Balance hydrogen atoms by adding hydrogen ions (<strong>H⁺</strong>) to the deficient side.</p>
+                    </div>
+
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <h4 class="font-bold text-slate-800 mb-1 flex items-center gap-1.5">
+                            <span class="bg-blue-100 text-blue-700 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">4</span>
+                            Charge Balance
+                        </h4>
+                        <p class="text-xs text-slate-600">Balance net charge by adding electrons (<strong>e⁻</strong>) to the more positive side.</p>
+                    </div>
+                </div>
+
+                <div class="bg-yellow-50 text-yellow-800 p-4 rounded-xl border border-yellow-100 text-xs">
+                    <strong>💡 PRO TIP FOR COMBINING HALF-EQUATIONS:</strong> <br>
+                    Before adding half-equations, make sure electrons (e⁻) in both equations are equal. If not, multiply each entire equation by coefficients to synchronize electron counts, and cancel out identical species!
+                </div>
+            </div>
+            <div class="p-4 bg-slate-50 border-t border-gray-100 flex justify-end rounded-b-2xl">
+                <button onclick="toggleInstructionsModal(false)" class="bg-chemistry-primary hover:bg-blue-600 text-white font-bold px-6 py-2 rounded-lg transition-colors">
+                    Got it!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- HINT POPUP DIALOG -->
+    <div id="hint-dialog" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-fadeIn">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 border border-amber-200">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-3xl">💡</span>
+                <h3 class="text-lg font-bold text-amber-800">Booster Hint</h3>
+            </div>
+            <p id="hint-text" class="text-slate-600 text-sm leading-relaxed mb-6">
+                No hint available.
+            </p>
+            <div class="flex justify-end">
+                <button onclick="closeHint()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2 rounded-lg text-sm">
+                    Close Hint
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CUSTOM CONFIRMATION MODAL -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 hidden animate-fadeIn">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 text-center">
+            <div class="text-4xl mb-3">🔄</div>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">Reset Progress?</h3>
+            <p class="text-slate-500 text-sm mb-6">This will clear all your saved answers, badges, and scores. You will start from the beginning.</p>
+            <div class="flex justify-center gap-3">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm transition-colors">
+                    Cancel
+                </button>
+                <button onclick="executeReset()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-sm transition-colors">
+                    Yes, Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Haptic Custom Toast Notifications -->
+    <div id="toast" class="fixed bottom-4 right-4 z-50 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 text-sm max-w-sm flex items-center gap-3">
+        <span id="toast-icon">✨</span>
+        <span id="toast-text">Success message here!</span>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 py-6 px-4 text-center text-xs border-t border-slate-800">
+        <div class="max-w-6xl mx-auto space-y-2">
+            <p>Designed for Matriculation Chemistry Syllabus (Redox Half-Equations in Acidic Medium).</p>
+            <p class="text-slate-500">&copy; 2026 Balance Booster App. Interactive Chemistry Worksheet System.</p>
+        </div>
+    </footer>
+
+    <!-- APP ENGINE SCRIPT -->
+    <script>
+        // WORKSHEET DATABASE
+        const WORKSHEET_DATA = {
+            1: {
+                title: "Balance atoms other than oxygen and hydrogen",
+                instructions: "Fill in the blank boxes with the correct coefficient to balance atoms other than oxygen and hydrogen.",
+                example: "I₂ &rarr; 2I<sup>-</sup>",
+                questions: [
+                    {
+                        id: "p1q1",
+                        equation_text: "C₂O₄²⁻ &rarr; <input type='text' id='input_p1q1' class='w-16 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='?'> CO₂",
+                        correct: "2",
+                        hint: "Look at the number of carbon atoms on the left side (reactant). There are 2 Carbon atoms in C₂O₄²⁻. How many CO₂ are needed on the right to match?",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p1q2",
+                        equation_text: "N₂O₄ &rarr; <input type='text' id='input_p1q2' class='w-16 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='?'> NO₃⁻",
+                        correct: "2",
+                        hint: "Count the Nitrogen (N) atoms. Reactant has N₂. Add coefficient to products (NO₃⁻) to balance Nitrogen first.",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p1q3",
+                        equation_text: "<input type='text' id='input_p1q3' class='w-16 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='?'> HNO₃ &rarr; NH₄NO₃",
+                        correct: "2",
+                        hint: "Watch out! One molecule of NH₄NO₃ contains TWO Nitrogen atoms (one in NH₄⁺ and one in NO₃⁻). How many HNO₃ do you need on the left to have 2 Nitrogens?",
+                        user_answered: null,
+                        attempts: 0
+                    }
+                ]
+            },
+            2: {
+                title: "Balance oxygen",
+                instructions: "Fill in the blank boxes with the correct number of water molecules (e.g., 3H₂O). Remember, you balance oxygen in acidic medium by adding H₂O molecules.",
+                example: "Al₂O₃ &rarr; 2Al + <strong>3H₂O</strong>",
+                questions: [
+                    {
+                        id: "p2q1",
+                        equation_text: "Cl₂ + <input type='text' id='input_p2q1' class='w-28 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 3H2O'> &rarr; 2ClO₃⁻",
+                        correct: "6H₂O",
+                        alt_corrects: ["6H2O", "6 h2o", "6 H2O", "6H₂O"],
+                        hint: "The products have 2ClO₃⁻, which means 2 × 3 = 6 Oxygen atoms on the right side. How many water molecules are needed on the left to provide 6 Oxygens?",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p2q2",
+                        equation_text: "Fe₂O₃ &rarr; 2Fe + <input type='text' id='input_p2q2' class='w-28 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 2H2O'>",
+                        correct: "3H₂O",
+                        alt_corrects: ["3H2O", "3 h2o", "3 H2O", "3H₂O"],
+                        hint: "Look at the reactant side: Fe₂O₃ has 3 Oxygen atoms. The product side is deficient in oxygen. How many water molecules are needed on the right side to balance it?",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p2q3",
+                        equation_text: "C₂O₄²⁻ + <input type='text' id='input_p2q3' class='w-28 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 3H2O'> &rarr; 2CO₃²⁻",
+                        correct: "2H₂O",
+                        alt_corrects: ["2H2O", "2 h2o", "2 H2O", "2H₂O"],
+                        hint: "Products side has 2CO₃²⁻ (total of 2 × 3 = 6 Oxygen atoms). Reactants side has C₂O₄²⁻ (4 Oxygen atoms). You need to add 2 more Oxygen atoms. How many water molecules equals 2 Oxygen atoms?",
+                        user_answered: null,
+                        attempts: 0
+                    }
+                ]
+            },
+            3: {
+                title: "Balance hydrogen",
+                instructions: "Fill in the blank boxes with the correct number of hydrogen ions (e.g. 14H⁺). Hydrogen is balanced in acidic solution by adding H⁺ ions to the deficient side.",
+                example: "Zn + 4H₂O &rarr; Zn(OH)₄²⁻ + <strong>4H⁺</strong>",
+                questions: [
+                    {
+                        id: "p3q1",
+                        equation_text: "Cr₂O₇²⁻ + <input type='text' id='input_p3q1' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 4H+'> &rarr; 2Cr³⁺ + 7H₂O",
+                        correct: "14H⁺",
+                        alt_corrects: ["14H+", "14h+", "14 H+", "14H⁺"],
+                        hint: "The product side has 7H₂O, which contains 7 × 2 = 14 Hydrogen atoms. How many H⁺ ions must be added to the reactant side?",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p3q2",
+                        equation_text: "NO₃⁻ + <input type='text' id='input_p3q2' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 4H+'> &rarr; NH₄⁺ + 3H₂O",
+                        correct: "10H⁺",
+                        alt_corrects: ["10H+", "10h+", "10 H+", "10H⁺"],
+                        hint: "Count total Hydrogen on the products side: NH₄⁺ has 4 H, and 3H₂O has 6 H (3×2). Total of 4 + 6 = 10 H atoms. How many H⁺ are needed?",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p3q3",
+                        equation_text: "CrO₂⁻ + 2H₂O &rarr; CrO₄²⁻ + <input type='text' id='input_p3q3' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 2H+'>",
+                        correct: "4H⁺",
+                        alt_corrects: ["4H+", "4h+", "4 H+", "4H⁺"],
+                        hint: "Count total Hydrogen on the reactants side: 2H₂O has 4 H. How many H⁺ are needed on the product side to balance it?",
+                        user_answered: null,
+                        attempts: 0
+                    }
+                ]
+            },
+            4: {
+                title: "Balance charge",
+                instructions: "Fill in the blank boxes with the correct number of electrons (e.g. 2e⁻ or 10e⁻) to balance overall electrical charges.",
+                example: "BrO₃⁻ + 6H⁺ + 6e⁻ &rarr; Br⁻ + 3H₂O",
+                questions: [
+                    {
+                        id: "p4q1",
+                        equation_text: "H₂O₂ + 2H⁺ + <input type='text' id='input_p4q1' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'> &rarr; 2H₂O",
+                        correct: "2e⁻",
+                        alt_corrects: ["2e-", "2e", "2e⁻", "2 e-"],
+                        hint: "Product side (2H₂O) is completely neutral (charge = 0). Reactant side has H₂O₂ (0) + 2H⁺ (+2) = total charge of +2. How many electrons (negative charges) must we add to make the reactant side charge equal 0?",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p4q2",
+                        equation_text: "Br₂ + 6H₂O &rarr; 2BrO₃⁻ + 12H⁺ + <input type='text' id='input_p4q2' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'>",
+                        correct: "10e⁻",
+                        alt_corrects: ["10e-", "10e", "10e⁻", "10 e-"],
+                        hint: "Left side is neutral (0). Right side has 2BrO₃⁻ (2 × -1 = -2) + 12H⁺ (+12) = total charge of +10. To bring +10 down to equal the left side (0), how many electrons do you need to add?",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p4q3",
+                        equation_text: "2IO₃⁻ + 12H⁺ + <input type='text' id='input_p4q3' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'> &rarr; I₂ + 6H₂O",
+                        correct: "10e⁻",
+                        alt_corrects: ["10e-", "10e", "10e⁻", "10 e-"],
+                        hint: "Product side is neutral (0). Reactant side has 2IO₃⁻ (-2) and 12H⁺ (+12) which equals +10. How many electrons are needed to reduce this net +10 charge to 0?",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p4q4",
+                        equation_text: "H₂O₂ &rarr; O₂ + 2H⁺ + <input type='text' id='input_p4q4' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'>",
+                        correct: "2e⁻",
+                        alt_corrects: ["2e-", "2e", "2e⁻", "2 e-"],
+                        hint: "Left side is neutral (0). Right side has O₂ (0) and 2H⁺ (+2). To make the right side charge neutral (0), we need to add electrons.",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p4q5",
+                        equation_text: "S₂O₃²⁻ + 5H₂O &rarr; 2SO₄²⁻ + 10H⁺ + <input type='text' id='input_p4q5' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'>",
+                        correct: "8e⁻",
+                        alt_corrects: ["8e-", "8e", "8e⁻", "8 e-"],
+                        hint: "Reactant side charge is -2. Product side charge currently is 2SO₄²⁻ (-4) and 10H⁺ (+10) = net +6. To go from +6 down to -2, how many electrons are required?",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p4q6",
+                        equation_text: "2S₂O₃³⁻ &rarr; S₄O₆²⁻ + <input type='text' id='input_p4q6' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'>",
+                        correct: "4e⁻",
+                        alt_corrects: ["4e-", "4e", "4e⁻", "4 e-"],
+                        hint: "Reactant side charge is 2 × -3 = -6. Product side charge is -2. To balance, how many extra negative charges (electrons) should go on the right so that both sides equal -6?",
+                        user_answered: null,
+                        attempts: 0
+                    }
+                ]
+            },
+            5: {
+                title: "Combine two half-equations",
+                instructions: "Review the half-reactions, multiply to equalize the electron transfer, add them together and eliminate common ions to get the final balanced equation. Type the entire correctly balanced equation.",
+                example: "Check formulas and write reactants and products with coefficients exactly.",
+                questions: [
+                    {
+                        id: "p5qa",
+                        equation_info: "Half Reaction 1: CrO₄²⁻ + 5H⁺ + 3e⁻ &rarr; Cr(OH)₃ + H₂O<br>Half Reaction 2: SO₃²⁻ + H₂O &rarr; SO₄²⁻ + 2H⁺ + 2e⁻",
+                        equation_text: "Enter fully balanced equation:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p5qa' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p5qa' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
+                        correct: "2CrO₄²⁻ + 4H⁺ + 3SO₃²⁻ + H₂O &rarr; 2Cr(OH)₃ + 3SO₄²⁻",
+                        alt_corrects: [
+                            "2CrO4^2- + 4H^+ + 3SO3^2- + H2O -> 2Cr(OH)3 + 3SO4^2-",
+                            "2CrO42- + 4H+ + 3SO32- + H2O -> 2Cr(OH)3 + 3SO42-",
+                            "2CrO₄²⁻ + 4H⁺ + 3SO₃²⁻ + H₂O -> 2Cr(OH)₃ + 3SO₄²⁻",
+                            "2CrO₄²⁻+4H⁺+3SO₃²⁻+H₂O &rarr; 2Cr(OH)₃+3SO₄²⁻",
+                            "2CrO₄²⁻ + 4H⁺ + 3SO₃²⁻ + H₂O &rarr; 2Cr(OH)₃ + 3SO₄²⁻",
+                            "H₂O + 2CrO₄²⁻ + 4H⁺ + 3SO₃²⁻ -> 2Cr(OH)₃ + 3SO₄²⁻",
+                            "2CrO4(2-) + 4H(+) + 3SO3(2-) + H2O -> 2Cr(OH)3 + 3SO4(2-)"
+                        ],
+                        hint: "Multiply Rxn 1 by 2 and Rxn 2 by 3. You will get 3 H₂O on the left and 2 H₂O on the right. They cancel to leave 1 H₂O on the reactant side!",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p5qb",
+                        equation_info: "Half Reaction 1: Pb(OH)₄²⁻ &rarr; PbO₂ + 2H₂O + 2e⁻<br>Half Reaction 2: ClO₃⁻ + 6H⁺ + 6e⁻ &rarr; Cl⁻ + 3H₂O",
+                        equation_text: "Enter fully balanced equation:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p5qb' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p5qb' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
+                        correct: "3Pb(OH)₄²⁻ + ClO₃⁻ + 6H⁺ &rarr; 3PbO₂ + 9H₂O + Cl⁻",
+                        alt_corrects: [
+                            "3Pb(OH)4^2- + ClO3^- + 6H^+ -> 3PbO2 + 9H2O + Cl^-",
+                            "3Pb(OH)42- + ClO3- + 6H+ -> 3PbO2 + 9H2O + Cl-",
+                            "3Pb(OH)₄²⁻ + ClO₃⁻ + 6H⁺ -> 3PbO₂ + 9H₂O + Cl⁻",
+                            "3Pb(OH)₄²⁻ + ClO₃⁻ + 6H⁺ &rarr; 3PbO₂ + 9H₂O + Cl⁻",
+                            "3Pb(OH)₄²⁻+ClO₃⁻+6H⁺ &rarr; 3PbO₂+9H₂O+Cl⁻",
+                            "3Pb(OH)4(2-) + ClO3(-) + 6H(+) -> 3PbO2 + 9H2O + Cl(-)"
+                        ],
+                        hint: "Multiply half reaction 1 by 3 so electrons equal 6e⁻ on both sides. Add up, sum H₂O correctly.",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p5qc",
+                        equation_info: "Half Reaction 1: Br₂ + 6H₂O &rarr; 2BrO₃⁻ + 12H⁺ + 10e⁻<br>Half Reaction 2: Br₂ + 2e⁻ &rarr; 2Br⁻",
+                        equation_text: "Enter fully balanced equation:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p5qc' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p5qc' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
+                        correct: "3H₂O + 3Br₂ &rarr; BrO₃⁻ + 6H⁺ + 5Br⁻",
+                        alt_corrects: [
+                            "3H2O + 3Br2 -> BrO3^- + 6H^+ + 5Br^-",
+                            "3H2O + 3Br2 -> BrO3- + 6H+ + 5Br-",
+                            "3H₂O + 3Br₂ -> BrO₃⁻ + 6H⁺ + 5Br⁻",
+                            "3H₂O + 3Br₂ &rarr; BrO₃⁻ + 6H⁺ + 5Br⁻",
+                            "3Br2 + 3H2O -> BrO3- + 6H+ + 5Br-",
+                            "3Br₂ + 3H₂O -> BrO₃⁻ + 6H⁺ + 5Br⁻",
+                            "3H₂O+3Br₂ &rarr; BrO₃⁻+6H⁺+5Br⁻",
+                            "3H₂O + 3Br₂ -> BrO₃⁻ + 6H⁺ + 5Br⁻",
+                            "3H2O + 3Br2 -> BrO3(-) + 6H(+) + 5Br(-)"
+                        ],
+                        hint: "Multiply reaction 2 by 5 to get 10 electrons. Combine both: 6Br₂ + 6H₂O &rarr; 2BrO₃⁻ + 12H⁺ + 10Br⁻. Divide all coefficients by 2 to get the simplest ratio!",
+                        user_answered: null,
+                        attempts: 0
+                    }
+                ]
+            },
+            6: {
+                title: "Challenge Yourself",
+                instructions: "Perform step-by-step balancing tasks. Complete each sequential sub-step: Atoms, Oxygen, Hydrogen, Charge (Electrons) then submit the complete half-reaction or final combined equation.",
+                example: "Balancing with analytical precision.",
+                questions: [
+                    {
+                        id: "p6qa",
+                        equation_info: "Skeleton Reaction: H₂O₂ + S₂O₃²⁻ &rarr; S₄O₆²⁻ + H₂O",
+                        equation_text: "Combine and balance completely:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p6qa' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p6qa' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
+                        correct: "H₂O₂ + 2H⁺ + 2S₂O₃²⁻ &rarr; 2H₂O + S₄O₆²⁻",
+                        alt_corrects: [
+                            "H2O2 + 2H+ + 2S2O32- -> 2H2O + S4O62-",
+                            "H2O2 + 2H^+ + 2S2O3^2- -> 2H2O + S4O6^2-",
+                            "H₂O₂ + 2H⁺ + 2S₂O₃²⁻ -> 2H₂O + S₄O₆²⁻",
+                            "H₂O₂ + 2H⁺ + 2S₂O₃²⁻ &rarr; 2H₂O + S₄O₆²⁻",
+                            "H₂O₂ + 2H⁺ + 2S₂O₃²⁻ &rarr; 2H₂O + S₄O₆²⁻",
+                            "H2O2+2H⁺+2S2O3²⁻ &rarr; 2H2O+S4O6²⁻",
+                            "H2O2 + 2H(+) + 2S2O3(2-) -> 2H2O + S4O6(2-)"
+                        ],
+                        hint: "Half reaction 1: H₂O₂ + 2H⁺ + 2e⁻ &rarr; 2H₂O. Half reaction 2: 2S₂O₃²⁻ &rarr; S₄O₆²⁻ + 2e⁻. Both already have 2 electrons, add them straight up!",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p6qb",
+                        equation_info: "Skeleton Reaction: CrO₄²⁻ + SO₃²⁻ &rarr; Cr(OH)₃ + SO₄²⁻",
+                        equation_text: "Combine and balance completely:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p6qb' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p6qb' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
+                        correct: "3SO₃²⁻ + 2CrO₄²⁻ + 4H⁺ + H₂O &rarr; 2Cr(OH)₃ + 3SO₄²⁻",
+                        alt_corrects: [
+                            "3SO3^2- + 2CrO4^2- + 4H^+ + H2O -> 2Cr(OH)3 + 3SO4^2-",
+                            "3SO32- + 2CrO42- + 4H+ + H2O -> 2Cr(OH)3 + 3SO32-",
+                            "3SO₃²⁻ + 2CrO₄²⁻ + 4H⁺ + H₂O -> 2Cr(OH)₃ + 3SO₄²⁻",
+                            "3SO₃²⁻ + 2CrO₄²⁻ + 4H⁺ + H₂O &rarr; 2Cr(OH)₃ + 3SO₄²⁻",
+                            "2CrO₄²⁻ + 3SO₃²⁻ + 4H⁺ + H₂O &rarr; 2Cr(OH)₃ + 3SO₄²⁻",
+                            "2CrO₄²⁻ + 4H⁺ + 3SO₃²⁻ + H₂O &rarr; 2Cr(OH)₃ + 3SO₄²⁻",
+                            "3SO3(2-) + 2CrO4(2-) + 4H(+) + H2O -> 2Cr(OH)3 + 3SO4(2-)"
+                        ],
+                        hint: "Oxidation: SO₃²⁻ + H₂O &rarr; SO₄²⁻ + 2H⁺ + 2e⁻ (multiply by 3). Reduction: CrO₄²⁻ + 4H⁺ + 3e⁻ &rarr; Cr(OH)₃ (multiply by 2). Combine and simplify molecules.",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p6qc",
+                        equation_info: "Skeleton Reaction: Cr₂O₇²⁻ + S &rarr; Cr³⁺ + S₄O₆²⁻",
+                        equation_text: "Combine and balance completely:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p6qc' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p6qc' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
+                        correct: "5Cr₂O₇²⁻ + 34H⁺ + 12S &rarr; 10Cr³⁺ + 17H₂O + 3S₄O₆²⁻",
+                        alt_corrects: [
+                            "5Cr2O7^2- + 34H^+ + 12S -> 10Cr^3+ + 17H2O + 3S4O6^2-",
+                            "5Cr2O72- + 34H+ + 12S -> 10Cr3+ + 17H2O + 3S4O62-",
+                            "5Cr₂O₇²⁻ + 34H⁺ + 12S -> 10Cr³⁺ + 17H₂O + 3S₄O₆²⁻",
+                            "5Cr₂O₇²⁻ + 34H⁺ + 12S &rarr; 10Cr³⁺ + 17H₂O + 3S₄O₆²⁻",
+                            "12S + 5Cr₂O₇²⁻ + 34H⁺ &rarr; 10Cr³⁺ + 17H₂O + 3S₄O₆²⁻",
+                            "5Cr2O7(2-) + 34H(+) + 12S -> 10Cr(3+) + 17H2O + 3S4O6(2-)"
+                        ],
+                        hint: "Oxidation: 4S &rarr; S₄O₆²⁻ + 2e⁻ (multiply by 3 for 6e⁻, but wait: 4S &rarr; S₄O₆²⁻ + 2e⁻. Combined is 12S &rarr; 3S₄O₆²⁻ + 6e⁻, combined electrons need to be 30). Look closely at the stoichiometry!",
+                        user_answered: null,
+                        attempts: 0
+                    }
+                ]
+            },
+            7: {
+                title: "Final Assessment",
+                instructions: "Test your complete knowledge. Achieve mastery by submitting the fully-balanced redox equations.",
+                example: "Check atoms, oxygen, hydrogen and charge balances meticulously.",
+                questions: [
+                    {
+                        id: "p7q1",
+                        equation_info: "Reaction 1: MnO₄⁻ + C₂O₄²⁻ &rarr; CO₃²⁻ + MnO₂",
+                        equation_text: "Fully balanced redox equation:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p7q1' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p7q1' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
+                        correct: "2MnO₄⁻ + 2H₂O + 3C₂O₄²⁻ &rarr; 2MnO₂ + 4H⁺ + 6CO₃²⁻",
+                        alt_corrects: [
+                            "2MnO4^- + 2H2O + 3C2O4^2- -> 2MnO2 + 4H^+ + 6CO3^2-",
+                            "2MnO4- + 2H2O + 3C2O42- -> 2MnO2 + 4H+ + 6CO32-",
+                            "2MnO₄⁻ + 2H₂O + 3C₂O₄²⁻ -> 2MnO₂ + 4H⁺ + 6CO₃²⁻",
+                            "2MnO₄⁻ + 2H₂O + 3C₂O₄²⁻ &rarr; 2MnO₂ + 4H⁺ + 6CO₃²⁻",
+                            "2MnO4(-) + 2H2O + 3C2O4(2-) -> 2MnO2 + 4H(+) + 6CO3(2-)"
+                        ],
+                        hint: "First split and balance individually. Note that the final coefficients are 2, 2, 3 on reactants and 2, 4, 6 on products side.",
+                        user_answered: null,
+                        attempts: 0
+                    },
+                    {
+                        id: "p7q2",
+                        equation_info: "Reaction 2: Cr³⁺ + MnO₄⁻ &rarr; MnO₂ + Cr₂O₇²⁻",
+                        equation_text: "Fully balanced redox equation:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p7q2' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p7q2' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
+                        correct: "2MnO₄⁻ + 2Cr³⁺ + 3H₂O &rarr; 2MnO₂ + Cr₂O₇²⁻ + 6H⁺",
+                        alt_corrects: [
+                            "2MnO4^- + 2Cr^3+ + 3H2O -> 2MnO2 + Cr2O7^2- + 6H^+",
+                            "2MnO4- + 2Cr3+ + 3H2O -> 2MnO2 + Cr2O72- + 6H+",
+                            "2MnO₄⁻ + 2Cr³⁺ + 3H₂O -> 2MnO₂ + Cr₂O₇²⁻ + 6H⁺",
+                            "2MnO₄⁻ + 2Cr³⁺ + 3H₂O &rarr; 2MnO₂ + Cr₂O₇²⁻ + 6H⁺",
+                            "2Cr³⁺ + 2MnO₄⁻ + 3H₂O &rarr; Cr₂O₇²⁻ + 2MnO₂ + 6H⁺",
+                            "2MnO4(-) + 2Cr(3+) + 3H2O -> 2MnO2 + Cr2O7(2-) + 6H(+)"
+                        ],
+                        hint: "Reduction: MnO₄⁻ + 4H⁺ + 3e⁻ &rarr; MnO₂ + 2H₂O. Oxidation: 2Cr³⁺ + 7H₂O &rarr; Cr₂O₇²⁻ + 14H⁺ + 6e⁻. Balance electrons by multiplying the reduction half by 2, and add together.",
+                        user_answered: null,
+                        attempts: 0
+                    }
+                ]
+            }
+        };
+
+        // LOCAL STORAGE AND STATE CONTROLLER
+        let state = {
+            currentPart: 1,
+            userScores: {}, // Format: { question_id: true/false }
+            completedParts: [] // Keep track of progress
+        };
+
+        // APP INITIALIZER
+        window.onload = function() {
+            loadSavedProgress();
+            updateGlobalStats();
+            renderCurrentState();
+        };
+
+        // STORAGE PERSISTENCE
+        function loadSavedProgress() {
+            try {
+                const stored = localStorage.getItem('balance_booster_progress');
+                if (stored) {
+                    state = JSON.parse(stored);
+                    // Ensure compatibility if scheme updated
+                    if (!state.userScores) state.userScores = {};
+                    if (!state.completedParts) state.completedParts = [];
+                }
+            } catch(e) {
+                console.error("Local storage loaded failed: ", e);
+            }
+        }
+
+        function saveProgress() {
+            try {
+                localStorage.setItem('balance_booster_progress', JSON.stringify(state));
+            } catch(e) {
+                console.error("Local storage save failed: ", e);
+            }
+            updateGlobalStats();
+        }
+
+        // CUSTOM MODAL CONFIRMATION FLOWS (Replaces standard window.confirm)
+        function resetProgressWithConfirmation() {
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirm-modal').classList.add('hidden');
+        }
+
+        function executeReset() {
+            try {
+                localStorage.removeItem('balance_booster_progress');
+            } catch(e) {
+                console.error("Failed to remove local storage", e);
+            }
+            state = {
+                currentPart: 1,
+                userScores: {},
+                completedParts: []
+            };
+            saveProgress();
+            renderCurrentState();
+            closeConfirmModal();
+            goToHome();
+            showToast("🔄 Progress reset successfully!", "blue");
+        }
+
+        // VIEW NAVIGATION
+        function startApp() {
+            document.getElementById('screen-home').classList.add('hidden');
+            document.getElementById('screen-activity').classList.remove('hidden');
+            document.getElementById('global-progress-container').classList.remove('hidden');
+            renderCurrentState();
+        }
+
+        function goToHome() {
+            document.getElementById('screen-home').classList.remove('hidden');
+            document.getElementById('screen-activity').classList.add('hidden');
+            document.getElementById('screen-certificate').classList.add('hidden');
+            document.getElementById('global-progress-container').classList.add('hidden');
+        }
+
+        function jumpToPart(partNumber) {
+            // Check sequence restriction
+            if (partNumber > 1 && !state.completedParts.includes(partNumber - 1)) {
+                showToast(`🔒 Part ${partNumber} is locked. Complete previous sections first!`, "red");
+                return;
+            }
+            state.currentPart = partNumber;
+            saveProgress();
+            
+            document.getElementById('screen-home').classList.add('hidden');
+            document.getElementById('screen-certificate').classList.add('hidden');
+            document.getElementById('screen-activity').classList.remove('hidden');
+            document.getElementById('global-progress-container').classList.remove('hidden');
+            
+            renderCurrentState();
+        }
+
+        // RENDER METHOD FOR QUESTION CARDS
+        function renderCurrentState() {
+            const currentPartNum = state.currentPart;
+            
+            // Check if user completed everything & redirect to certificate if they chose
+            if (currentPartNum === 8) {
+                renderCertificate();
+                return;
+            }
+
+            const currentData = WORKSHEET_DATA[currentPartNum];
+            
+            // Set Titles & Labels
+            document.getElementById('current-section-title').innerText = `PART ${currentPartNum} OF 6`;
+            if (currentPartNum === 7) {
+                document.getElementById('current-section-title').innerText = `FINAL ASSESSMENT`;
+            }
+            document.getElementById('part-indicator').innerText = `Part ${currentPartNum}`;
+            document.getElementById('part-title').innerHTML = currentData.title;
+            document.getElementById('part-instructions').innerHTML = currentData.instructions;
+            
+            // Render Example Block
+            if (currentData.example) {
+                document.getElementById('part-example').innerHTML = `
+                    <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded font-bold uppercase tracking-wider">Example</span>
+                    <span>${currentData.example}</span>
+                `;
+            }
+
+            // Render Questions List
+            const listContainer = document.getElementById('questions-list');
+            listContainer.innerHTML = ""; // Clear existing
+
+            currentData.questions.forEach((q, index) => {
+                const isCorrect = state.userScores[q.id] === true;
+                const savedVal = getSavedInputValue(q.id) || "";
+                
+                // Card Box Container
+                const card = document.createElement('div');
+                card.className = `p-5 rounded-xl border transition-all ${isCorrect ? 'border-green-300 bg-green-50/40 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'}`;
+                
+                // Formulate inside
+                let infoHtml = "";
+                if (q.equation_info) {
+                    infoHtml = `<div class="bg-slate-50 text-slate-700 font-mono text-xs md:text-sm p-3 rounded-lg border border-slate-200 mb-3 leading-relaxed">${q.equation_info}</div>`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex-grow space-y-2">
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Question ${index + 1}</span>
+                            ${infoHtml}
+                            <div class="text-slate-800 font-semibold text-sm md:text-lg select-all leading-loose">
+                                ${q.equation_text}
+                            </div>
+                        </div>
+                        
+                        <!-- Actions Controls Side -->
+                        <div class="flex items-center gap-2 md:self-end">
+                            <button onclick="showHint('${q.id}')" class="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors border border-amber-200" title="Get Help Hint">
+                                💡 Hint
+                            </button>
+                            <button id="btn_check_${q.id}" onclick="checkAnswer('${q.id}')" class="px-5 py-2 font-bold text-sm text-white rounded-lg transition-all ${isCorrect ? 'bg-green-600 hover:bg-green-700' : 'bg-chemistry-primary hover:bg-blue-600'}">
+                                ${isCorrect ? 'Verified ✓' : 'Check'}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Alert Status Banner -->
+                    <div id="status_${q.id}" class="mt-3 text-xs font-bold hidden flex items-center gap-1.5 p-2 rounded">
+                        <span id="status_icon_${q.id}"></span>
+                        <span id="status_text_${q.id}"></span>
+                    </div>
+                `;
+
+                listContainer.appendChild(card);
+
+                // Re-hydrate the input values and state styling
+                const inputEl = document.getElementById(`input_${q.id}`);
+                const reactEl = document.getElementById(`input_reactants_${q.id}`);
+                const prodEl = document.getElementById(`input_products_${q.id}`);
+                
+                if (inputEl) {
+                    inputEl.value = savedVal;
+                    if (isCorrect) {
+                        inputEl.disabled = true;
+                        inputEl.classList.remove('bg-amber-50', 'border-gray-300');
+                        inputEl.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+                    }
+                } else if (reactEl && prodEl) {
+                    if (isCorrect) {
+                        reactEl.disabled = true;
+                        prodEl.disabled = true;
+                        reactEl.classList.remove('bg-amber-50', 'border-gray-300');
+                        prodEl.classList.remove('bg-amber-50', 'border-gray-300');
+                        reactEl.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+                        prodEl.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+                    }
+                }
+            });
+
+            // Adjust Progress Indicators
+            updateProgressBar();
+            checkAndToggleSuccessPanel();
+        }
+
+        // FIND HINT OR HELP
+        function showHint(questionId) {
+            let foundHint = "No hints added.";
+            // Search question database
+            for (let part in WORKSHEET_DATA) {
+                const found = WORKSHEET_DATA[part].questions.find(q => q.id === questionId);
+                if (found) {
+                    foundHint = found.hint;
+                    break;
+                }
+            }
+
+            document.getElementById('hint-text').innerHTML = foundHint;
+            document.getElementById('hint-dialog').classList.remove('hidden');
+        }
+
+        function closeHint() {
+            document.getElementById('hint-dialog').classList.add('hidden');
+        }
+
+        // TEXT REFINEMENT TO CLEAN USER INPUT SPACES / UNICODE CHARACTERS
+        function cleanText(text) {
+            return text.toString()
+                .trim()
+                .toLowerCase()
+                // Standardize common chemical arrows
+                .replace(/->/g, "→")
+                .replace(/&rarr;/g, "→")
+                // Standardize simple superscript variants to common format
+                .replace(/2-/g, "²⁻")
+                .replace(/3-/g, "³⁻")
+                .replace(/1-/g, "⁻")
+                .replace(/-\s*/g, "⁻")
+                .replace(/\+\s*/g, "⁺")
+                .replace(/e-/g, "e⁻")
+                .replace(/\s+/g, "") // Strip all whitespace inside formula to prevent comparison mismatches
+                .normalize('NFKC');
+        }
+
+        // EVALUATOR FOR INPUT ANSWERS
+        function checkAnswer(questionId) {
+            let userVal = "";
+            const inputEl = document.getElementById(`input_${questionId}`);
+            const reactEl = document.getElementById(`input_reactants_${questionId}`);
+            const prodEl = document.getElementById(`input_products_${questionId}`);
+
+            if (inputEl) {
+                userVal = inputEl.value;
+                if (!userVal.trim()) {
+                    showToast("⚠️ Please enter an answer before checking!", "amber");
+                    return;
+                }
+            } else if (reactEl && prodEl) {
+                const rVal = reactEl.value.trim();
+                const pVal = prodEl.value.trim();
+                if (!rVal || !pVal) {
+                    showToast("⚠️ Please enter both reactants and products before checking!", "amber");
+                    return;
+                }
+                userVal = rVal + " -> " + pVal;
+            } else {
+                return;
+            }
+
+            let foundQuestion = null;
+            let partNum = null;
+            for (let part in WORKSHEET_DATA) {
+                const found = WORKSHEET_DATA[part].questions.find(q => q.id === questionId);
+                if (found) {
+                    foundQuestion = found;
+                    partNum = parseInt(part);
+                    break;
+                }
+            }
+
+            if (!foundQuestion) return;
+
+            const userCleaned = cleanText(userVal);
+            const correctCleaned = cleanText(foundQuestion.correct);
+            
+            // Check alternative match strings
+            let isAlternativeMatch = false;
+            if (foundQuestion.alt_corrects) {
+                isAlternativeMatch = foundQuestion.alt_corrects.some(alt => cleanText(alt) === userCleaned);
+            }
+
+            const isCorrect = (userCleaned === correctCleaned) || isAlternativeMatch;
+            const statusDiv = document.getElementById(`status_${questionId}`);
+            const statusIcon = document.getElementById(`status_icon_${questionId}`);
+            const statusText = document.getElementById(`status_text_${questionId}`);
+
+            statusDiv.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+
+            if (isCorrect) {
+                // Correct path
+                state.userScores[questionId] = true;
+                saveProgress();
+
+                statusDiv.classList.add('bg-green-100', 'text-green-800');
+                statusIcon.innerHTML = "✅";
+                statusText.innerHTML = "Perfect match! Well done.";
+                
+                if (inputEl) {
+                    inputEl.disabled = true;
+                    inputEl.classList.remove('bg-amber-50', 'border-gray-300');
+                    inputEl.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+                } else if (reactEl && prodEl) {
+                    reactEl.disabled = true;
+                    prodEl.disabled = true;
+                    reactEl.classList.remove('bg-amber-50', 'border-gray-300', 'border-red-500', 'bg-red-50');
+                    prodEl.classList.remove('bg-amber-50', 'border-gray-300', 'border-red-500', 'bg-red-50');
+                    reactEl.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+                    prodEl.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+                }
+                
+                const checkBtn = document.getElementById(`btn_check_${questionId}`);
+                if (checkBtn) {
+                    checkBtn.innerText = "Verified ✓";
+                    checkBtn.className = "px-5 py-2 font-bold text-sm text-white rounded-lg bg-green-600 hover:bg-green-700";
+                }
+
+                showToast("🎉 Excellent! Correct chemical formula balanced.", "green");
+                checkAndToggleSuccessPanel();
+                
+            } else {
+                // Incorrect path
+                statusDiv.classList.add('bg-red-100', 'text-red-800');
+                statusIcon.innerHTML = "❌";
+                statusText.innerHTML = "Incorrect balance coefficient or formulation. Review H⁺, H₂O, e⁻ counts and try again!";
+                
+                if (inputEl) {
+                    inputEl.classList.add('border-red-500', 'bg-red-50');
+                } else if (reactEl && prodEl) {
+                    reactEl.classList.add('border-red-500', 'bg-red-50');
+                    prodEl.classList.add('border-red-500', 'bg-red-50');
+                }
+                showToast("❌ Incorrect balance. Need a boost? Use the 'Hint' button!", "red");
+            }
+        }
+
+        // CHECK IF ALL SECTION QUESTIONS ARE COMPLETED
+        function checkAndToggleSuccessPanel() {
+            const currentPartNum = state.currentPart;
+            const currentData = WORKSHEET_DATA[currentPartNum];
+            
+            const allCorrect = currentData.questions.every(q => state.userScores[q.id] === true);
+            const successPanel = document.getElementById('part-success-panel');
+
+            if (allCorrect) {
+                // Save Part to Completed Array
+                if (!state.completedParts.includes(currentPartNum)) {
+                    state.completedParts.push(currentPartNum);
+                    saveProgress();
+                }
+
+                // Show Congrats Panel
+                const totalPartQs = currentData.questions.length;
+                document.getElementById('part-score-message').innerText = `You balanced all ${totalPartQs} equations successfully in this section! All marks awarded.`;
+                successPanel.classList.remove('hidden');
+
+                // If completed last part, trigger confetti!
+                if (currentPartNum === 7) {
+                    triggerConfettiAndSuccess();
+                }
+            } else {
+                successPanel.classList.add('hidden');
+            }
+        }
+
+        // NEXT STEP ROUTER
+        function goToNextPart() {
+            // Hide the success panel for next reuse
+            document.getElementById('part-success-panel').classList.add('hidden');
+            
+            if (state.currentPart < 7) {
+                state.currentPart += 1;
+                saveProgress();
+                renderCurrentState();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                // Assessment completed! Go to certificate
+                state.currentPart = 8;
+                saveProgress();
+                renderCertificate();
+            }
+        }
+
+        // CERTIFICATE & RATING DISPLAY ENGINE
+        function renderCertificate() {
+            document.getElementById('screen-activity').classList.add('hidden');
+            document.getElementById('global-progress-container').classList.add('hidden');
+            document.getElementById('screen-certificate').classList.remove('hidden');
+
+            // Calculate metrics
+            let totalPossible = 0;
+            let earned = 0;
+            for (let part in WORKSHEET_DATA) {
+                totalPossible += WORKSHEET_DATA[part].questions.length;
+                WORKSHEET_DATA[part].questions.forEach(q => {
+                    if (state.userScores[q.id] === true) earned++;
+                });
+            }
+
+            const percentage = Math.round((earned / totalPossible) * 100) || 0;
+            document.getElementById('cert-score').innerText = `${earned}/${totalPossible} (${percentage}%)`;
+
+            // Badge determination logic
+            let badgeIcon = "🏆";
+            let badgeName = "KEEP PRACTICING";
+            let badgeColorClass = "text-red-600";
+
+            if (percentage >= 90) {
+                badgeIcon = "🏆";
+                badgeName = "REDOX MASTER";
+                badgeColorClass = "text-amber-500";
+            } else if (percentage >= 70) {
+                badgeIcon = "⚡";
+                badgeName = "ELECTRON EXPERT";
+                badgeColorClass = "text-green-600";
+            } else if (percentage >= 50) {
+                badgeIcon = "🔬";
+                badgeName = "ION EXPLORER";
+                badgeColorClass = "text-blue-500";
+            } else {
+                badgeIcon = "📚";
+                badgeName = "KEEP PRACTICING";
+                badgeColorClass = "text-slate-500";
+            }
+
+            const badgeContainer = document.getElementById('cert-badge-name');
+            badgeContainer.innerText = badgeName;
+            badgeContainer.className = `font-extrabold tracking-wide ${badgeColorClass}`;
+            document.getElementById('cert-badge-icon').innerText = badgeIcon;
+
+            triggerConfettiAndSuccess();
+        }
+
+        // INPUT VALUE UTILITY
+        function getSavedInputValue(id) {
+            const input = document.getElementById(`input_${id}`);
+            if (input) return input.value;
+            return "";
+        }
+
+        // PROGRESS CALCULATOR
+        function updateProgressBar() {
+            let totalQs = 0;
+            let answeredQs = 0;
+            
+            for (let part in WORKSHEET_DATA) {
+                totalQs += WORKSHEET_DATA[part].questions.length;
+                WORKSHEET_DATA[part].questions.forEach(q => {
+                    if (state.userScores[q.id] === true) answeredQs++;
+                });
+            }
+
+            const pct = Math.round((answeredQs / totalQs) * 100) || 0;
+            
+            const bar = document.getElementById('progress-bar');
+            bar.style.width = `${pct}%`;
+            document.getElementById('progress-percent').innerText = `${pct}% Done`;
+
+            // Color navigation dots based on progress completion status
+            for (let p = 1; p <= 7; p++) {
+                const dot = document.getElementById(`dot-part-${p}`);
+                if (dot) {
+                    if (state.completedParts.includes(p) || (p === 7 && state.completedParts.includes(6))) {
+                        dot.className = "cursor-pointer font-bold text-chemistry-secondary transition-colors pr-1";
+                    } else if (p === state.currentPart) {
+                        dot.className = "cursor-pointer font-extrabold text-chemistry-primary underline transition-colors pr-1";
+                    } else {
+                        dot.className = "cursor-pointer text-gray-400 hover:text-slate-600 transition-colors pr-1";
+                    }
+                }
+            }
+        }
+
+        // STATS BAR SYNC
+        function updateGlobalStats() {
+            let totalQs = 0;
+            let answeredQs = 0;
+            for (let part in WORKSHEET_DATA) {
+                totalQs += WORKSHEET_DATA[part].questions.length;
+                WORKSHEET_DATA[part].questions.forEach(q => {
+                    if (state.userScores[q.id] === true) answeredQs++;
+                });
+            }
+            document.getElementById('global-score-badge').innerText = `${answeredQs}/${totalQs}`;
+        }
+
+        // INSTRUCTIONS VISIBILITY CONTROLLER
+        function toggleInstructionsModal(show) {
+            const modal = document.getElementById('instructions-modal');
+            if (show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // TOAST ENGINE (Failsafe for iFrame alerts)
+        function showToast(message, type = "blue") {
+            const toast = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastText.innerText = message;
+            
+            // Icon assignment
+            if (type === "green") {
+                toastIcon.innerText = "✅";
+                toast.className = "fixed bottom-4 right-4 z-50 bg-green-800 text-white px-4 py-3 rounded-xl shadow-2xl transform translate-y-0 opacity-100 transition-all duration-300 text-sm max-w-sm flex items-center gap-3";
+            } else if (type === "red") {
+                toastIcon.innerText = "❌";
+                toast.className = "fixed bottom-4 right-4 z-50 bg-red-800 text-white px-4 py-3 rounded-xl shadow-2xl transform translate-y-0 opacity-100 transition-all duration-300 text-sm max-w-sm flex items-center gap-3";
+            } else if (type === "amber") {
+                toastIcon.innerText = "⚠️";
+                toast.className = "fixed bottom-4 right-4 z-50 bg-amber-700 text-white px-4 py-3 rounded-xl shadow-2xl transform translate-y-0 opacity-100 transition-all duration-300 text-sm max-w-sm flex items-center gap-3";
+            } else {
+                toastIcon.innerText = "✨";
+                toast.className = "fixed bottom-4 right-4 z-50 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-2xl transform translate-y-0 opacity-100 transition-all duration-300 text-sm max-w-sm flex items-center gap-3";
+            }
+
+            setTimeout(() => {
+                toast.className = "fixed bottom-4 right-4 z-50 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 text-sm max-w-sm flex items-center gap-3";
+            }, 3000);
+        }
+
+        // CONFETTI ANIMATION SYSTEM
+        function triggerConfettiAndSuccess() {
+            const container = document.getElementById('confetti-container');
+            container.classList.remove('hidden');
+            container.innerHTML = ""; // Clear existing
+
+            const colors = ['#1E88E5', '#43A047', '#FFB300', '#F44336', '#E91E63', '#9C27B0'];
+            
+            // Spawn pieces of confetti
+            for (let i = 0; i < 120; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                
+                // Random properties
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = `${Math.random() * 2}s`;
+                confetti.style.transform = `scale(${Math.random() * 0.8 + 0.4})`;
+                
+                container.appendChild(confetti);
+            }
+
+            // Clean up confetti container after sequence runs
+            setTimeout(() => {
+                container.classList.add('hidden');
+                container.innerHTML = "";
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
