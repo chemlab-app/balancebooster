@@ -7,6 +7,7 @@
     
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
     <script>
         tailwind.config = {
             theme: {
@@ -24,6 +25,7 @@
             }
         }
     </script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
         
@@ -53,6 +55,35 @@
                 transform: translateY(100vh) rotate(360deg);
                 opacity: 0;
             }
+        }
+
+        .drop-zone {
+            transition: all 0.2s ease;
+        }
+        .drop-zone.drag-over {
+            background-color: #e0f2fe;
+            border-color: #38bdf8;
+        }
+        .drop-zone[data-zone]:empty::before {
+            content: attr(data-placeholder);
+            color: #94a3b8;
+            font-style: italic;
+            font-size: 0.875rem;
+        }
+        .drop-zone[data-zone] > .draggable-pill:not(:first-child) {
+            position: relative;
+        }
+        .drop-zone[data-zone] > .draggable-pill:not(:first-child)::before {
+            content: "+";
+            position: absolute;
+            left: -1rem; /* perfectly balances with Tailwind gap-x-6 */
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-weight: 900;
+            font-size: 1.5rem;
+            pointer-events: none;
+            font-family: 'Poppins', sans-serif;
         }
     </style>
 </head>
@@ -372,7 +403,7 @@
             1: {
                 title: "Balance atoms other than oxygen and hydrogen",
                 instructions: "Fill in the blank boxes with the correct coefficient to balance atoms other than oxygen and hydrogen.",
-                example: "I₂ &rarr; 2I<sup>-</sup>",
+                example: "I₂ &rarr; <strong class='text-red-600'>2</strong>I<sup>-</sup>",
                 questions: [
                     {
                         id: "p1q1",
@@ -403,7 +434,7 @@
             2: {
                 title: "Balance oxygen",
                 instructions: "Fill in the blank boxes with the correct number of water molecules (e.g., 3H₂O). Remember, you balance oxygen in acidic medium by adding H₂O molecules.",
-                example: "Al₂O₃ &rarr; 2Al + <strong>3H₂O</strong>",
+                example: "Al₂O₃ &rarr; 2Al + <strong class='text-red-600'>3H₂O</strong>",
                 questions: [
                     {
                         id: "p2q1",
@@ -437,7 +468,7 @@
             3: {
                 title: "Balance hydrogen",
                 instructions: "Fill in the blank boxes with the correct number of hydrogen ions (e.g. 14H⁺). Hydrogen is balanced in acidic solution by adding H⁺ ions to the deficient side.",
-                example: "Zn + 4H₂O &rarr; Zn(OH)₄²⁻ + <strong>4H⁺</strong>",
+                example: "Zn + 4H₂O &rarr; Zn(OH)₄²⁻ + <strong class='text-red-600'>4H⁺</strong>",
                 questions: [
                     {
                         id: "p3q1",
@@ -471,7 +502,7 @@
             4: {
                 title: "Balance charge",
                 instructions: "Fill in the blank boxes with the correct number of electrons (e.g. 2e⁻ or 10e⁻) to balance overall electrical charges.",
-                example: "BrO₃⁻ + 6H⁺ + 6e⁻ &rarr; Br⁻ + 3H₂O",
+                example: "BrO₃⁻ + 6H⁺ + <strong class='text-red-600'>6e⁻</strong> &rarr; Br⁻ + 3H₂O",
                 questions: [
                     {
                         id: "p4q1",
@@ -536,55 +567,36 @@
                 questions: [
                     {
                         id: "p5qa",
+                        type: "dragdrop",
                         equation_info: "Half Reaction 1: CrO₄²⁻ + 5H⁺ + 3e⁻ &rarr; Cr(OH)₃ + H₂O<br>Half Reaction 2: SO₃²⁻ + H₂O &rarr; SO₄²⁻ + 2H⁺ + 2e⁻",
-                        equation_text: "Enter fully balanced equation:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p5qa' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p5qa' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
-                        correct: "2CrO₄²⁻ + 4H⁺ + 3SO₃²⁻ + H₂O &rarr; 2Cr(OH)₃ + 3SO₄²⁻",
-                        alt_corrects: [
-                            "2CrO4^2- + 4H^+ + 3SO3^2- + H2O -> 2Cr(OH)3 + 3SO4^2-",
-                            "2CrO42- + 4H+ + 3SO32- + H2O -> 2Cr(OH)3 + 3SO42-",
-                            "2CrO₄²⁻ + 4H⁺ + 3SO₃²⁻ + H₂O -> 2Cr(OH)₃ + 3SO₄²⁻",
-                            "2CrO₄²⁻+4H⁺+3SO₃²⁻+H₂O &rarr; 2Cr(OH)₃+3SO₄²⁻",
-                            "2CrO₄²⁻ + 4H⁺ + 3SO₃²⁻ + H₂O &rarr; 2Cr(OH)₃ + 3SO₄²⁻",
-                            "H₂O + 2CrO₄²⁻ + 4H⁺ + 3SO₃²⁻ -> 2Cr(OH)₃ + 3SO₄²⁻",
-                            "2CrO4(2-) + 4H(+) + 3SO3(2-) + H2O -> 2Cr(OH)3 + 3SO4(2-)"
-                        ],
+                        equation_text: "Drag and drop to assemble the fully balanced equation:",
+                        drag_pool: ["3SO₄²⁻", "H₂O", "2CrO₄²⁻", "4H⁺", "2Cr(OH)₃", "3SO₃²⁻"],
+                        correct_reactants: ["2CrO₄²⁻", "4H⁺", "3SO₃²⁻", "H₂O"],
+                        correct_products: ["2Cr(OH)₃", "3SO₄²⁻"],
                         hint: "Multiply Rxn 1 by 2 and Rxn 2 by 3. You will get 3 H₂O on the left and 2 H₂O on the right. They cancel to leave 1 H₂O on the reactant side!",
                         user_answered: null,
                         attempts: 0
                     },
                     {
                         id: "p5qb",
+                        type: "dragdrop",
                         equation_info: "Half Reaction 1: Pb(OH)₄²⁻ &rarr; PbO₂ + 2H₂O + 2e⁻<br>Half Reaction 2: ClO₃⁻ + 6H⁺ + 6e⁻ &rarr; Cl⁻ + 3H₂O",
-                        equation_text: "Enter fully balanced equation:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p5qb' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p5qb' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
-                        correct: "3Pb(OH)₄²⁻ + ClO₃⁻ + 6H⁺ &rarr; 3PbO₂ + 9H₂O + Cl⁻",
-                        alt_corrects: [
-                            "3Pb(OH)4^2- + ClO3^- + 6H^+ -> 3PbO2 + 9H2O + Cl^-",
-                            "3Pb(OH)42- + ClO3- + 6H+ -> 3PbO2 + 9H2O + Cl-",
-                            "3Pb(OH)₄²⁻ + ClO₃⁻ + 6H⁺ -> 3PbO₂ + 9H₂O + Cl⁻",
-                            "3Pb(OH)₄²⁻ + ClO₃⁻ + 6H⁺ &rarr; 3PbO₂ + 9H₂O + Cl⁻",
-                            "3Pb(OH)₄²⁻+ClO₃⁻+6H⁺ &rarr; 3PbO₂+9H₂O+Cl⁻",
-                            "3Pb(OH)4(2-) + ClO3(-) + 6H(+) -> 3PbO2 + 9H2O + Cl(-)"
-                        ],
+                        equation_text: "Drag and drop to assemble the fully balanced equation:",
+                        drag_pool: ["3PbO₂", "ClO₃⁻", "3Pb(OH)₄²⁻", "9H₂O", "6H⁺", "Cl⁻"],
+                        correct_reactants: ["3Pb(OH)₄²⁻", "ClO₃⁻", "6H⁺"],
+                        correct_products: ["3PbO₂", "9H₂O", "Cl⁻"],
                         hint: "Multiply half reaction 1 by 3 so electrons equal 6e⁻ on both sides. Add up, sum H₂O correctly.",
                         user_answered: null,
                         attempts: 0
                     },
                     {
                         id: "p5qc",
+                        type: "dragdrop",
                         equation_info: "Half Reaction 1: Br₂ + 6H₂O &rarr; 2BrO₃⁻ + 12H⁺ + 10e⁻<br>Half Reaction 2: Br₂ + 2e⁻ &rarr; 2Br⁻",
-                        equation_text: "Enter fully balanced equation:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p5qc' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p5qc' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
-                        correct: "3H₂O + 3Br₂ &rarr; BrO₃⁻ + 6H⁺ + 5Br⁻",
-                        alt_corrects: [
-                            "3H2O + 3Br2 -> BrO3^- + 6H^+ + 5Br^-",
-                            "3H2O + 3Br2 -> BrO3- + 6H+ + 5Br-",
-                            "3H₂O + 3Br₂ -> BrO₃⁻ + 6H⁺ + 5Br⁻",
-                            "3H₂O + 3Br₂ &rarr; BrO₃⁻ + 6H⁺ + 5Br⁻",
-                            "3Br2 + 3H2O -> BrO3- + 6H+ + 5Br-",
-                            "3Br₂ + 3H₂O -> BrO₃⁻ + 6H⁺ + 5Br⁻",
-                            "3H₂O+3Br₂ &rarr; BrO₃⁻+6H⁺+5Br⁻",
-                            "3H₂O + 3Br₂ -> BrO₃⁻ + 6H⁺ + 5Br⁻",
-                            "3H2O + 3Br2 -> BrO3(-) + 6H(+) + 5Br(-)"
-                        ],
+                        equation_text: "Drag and drop to assemble the fully balanced equation:",
+                        drag_pool: ["3H₂O", "BrO₃⁻", "5Br⁻", "3Br₂", "6H⁺"],
+                        correct_reactants: ["3H₂O", "3Br₂"],
+                        correct_products: ["BrO₃⁻", "6H⁺", "5Br⁻"],
                         hint: "Multiply reaction 2 by 5 to get 10 electrons. Combine both: 6Br₂ + 6H₂O &rarr; 2BrO₃⁻ + 12H⁺ + 10Br⁻. Divide all coefficients by 2 to get the simplest ratio!",
                         user_answered: null,
                         attempts: 0
@@ -598,53 +610,36 @@
                 questions: [
                     {
                         id: "p6qa",
-                        equation_info: "Skeleton Reaction: H₂O₂ + S₂O₃²⁻ &rarr; S₄O₆²⁻ + H₂O",
-                        equation_text: "Combine and balance completely:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p6qa' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p6qa' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
-                        correct: "H₂O₂ + 2H⁺ + 2S₂O₃²⁻ &rarr; 2H₂O + S₄O₆²⁻",
-                        alt_corrects: [
-                            "H2O2 + 2H+ + 2S2O32- -> 2H2O + S4O62-",
-                            "H2O2 + 2H^+ + 2S2O3^2- -> 2H2O + S4O6^2-",
-                            "H₂O₂ + 2H⁺ + 2S₂O₃²⁻ -> 2H₂O + S₄O₆²⁻",
-                            "H₂O₂ + 2H⁺ + 2S₂O₃²⁻ &rarr; 2H₂O + S₄O₆²⁻",
-                            "H₂O₂ + 2H⁺ + 2S₂O₃²⁻ &rarr; 2H₂O + S₄O₆²⁻",
-                            "H2O2+2H⁺+2S2O3²⁻ &rarr; 2H2O+S4O6²⁻",
-                            "H2O2 + 2H(+) + 2S2O3(2-) -> 2H2O + S4O6(2-)"
-                        ],
+                        type: "dragdrop",
+                        equation_info: "Reaction: H₂O₂ + S₂O₃²⁻ &rarr; S₄O₆²⁻ + H₂O",
+                        equation_text: "Combine and balance completely:",
+                        drag_pool: ["S₄O₆²⁻", "H₂O₂", "2H₂O", "2H⁺", "2S₂O₃²⁻"],
+                        correct_reactants: ["H₂O₂", "2H⁺", "2S₂O₃²⁻"],
+                        correct_products: ["2H₂O", "S₄O₆²⁻"],
                         hint: "Half reaction 1: H₂O₂ + 2H⁺ + 2e⁻ &rarr; 2H₂O. Half reaction 2: 2S₂O₃²⁻ &rarr; S₄O₆²⁻ + 2e⁻. Both already have 2 electrons, add them straight up!",
                         user_answered: null,
                         attempts: 0
                     },
                     {
                         id: "p6qb",
-                        equation_info: "Skeleton Reaction: CrO₄²⁻ + SO₃²⁻ &rarr; Cr(OH)₃ + SO₄²⁻",
-                        equation_text: "Combine and balance completely:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p6qb' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p6qb' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
-                        correct: "3SO₃²⁻ + 2CrO₄²⁻ + 4H⁺ + H₂O &rarr; 2Cr(OH)₃ + 3SO₄²⁻",
-                        alt_corrects: [
-                            "3SO3^2- + 2CrO4^2- + 4H^+ + H2O -> 2Cr(OH)3 + 3SO4^2-",
-                            "3SO32- + 2CrO42- + 4H+ + H2O -> 2Cr(OH)3 + 3SO32-",
-                            "3SO₃²⁻ + 2CrO₄²⁻ + 4H⁺ + H₂O -> 2Cr(OH)₃ + 3SO₄²⁻",
-                            "3SO₃²⁻ + 2CrO₄²⁻ + 4H⁺ + H₂O &rarr; 2Cr(OH)₃ + 3SO₄²⁻",
-                            "2CrO₄²⁻ + 3SO₃²⁻ + 4H⁺ + H₂O &rarr; 2Cr(OH)₃ + 3SO₄²⁻",
-                            "2CrO₄²⁻ + 4H⁺ + 3SO₃²⁻ + H₂O &rarr; 2Cr(OH)₃ + 3SO₄²⁻",
-                            "3SO3(2-) + 2CrO4(2-) + 4H(+) + H2O -> 2Cr(OH)3 + 3SO4(2-)"
-                        ],
+                        type: "dragdrop",
+                        equation_info: "Reaction: CrO₄²⁻ + SO₃²⁻ &rarr; Cr(OH)₃ + SO₄²⁻",
+                        equation_text: "Combine and balance completely:",
+                        drag_pool: ["2Cr(OH)₃", "4H⁺", "2CrO₄²⁻", "3SO₄²⁻", "3SO₃²⁻", "H₂O"],
+                        correct_reactants: ["3SO₃²⁻", "2CrO₄²⁻", "4H⁺", "H₂O"],
+                        correct_products: ["2Cr(OH)₃", "3SO₄²⁻"],
                         hint: "Oxidation: SO₃²⁻ + H₂O &rarr; SO₄²⁻ + 2H⁺ + 2e⁻ (multiply by 3). Reduction: CrO₄²⁻ + 4H⁺ + 3e⁻ &rarr; Cr(OH)₃ (multiply by 2). Combine and simplify molecules.",
                         user_answered: null,
                         attempts: 0
                     },
                     {
                         id: "p6qc",
-                        equation_info: "Skeleton Reaction: Cr₂O₇²⁻ + S &rarr; Cr³⁺ + S₄O₆²⁻",
-                        equation_text: "Combine and balance completely:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p6qc' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p6qc' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
-                        correct: "5Cr₂O₇²⁻ + 34H⁺ + 12S &rarr; 10Cr³⁺ + 17H₂O + 3S₄O₆²⁻",
-                        alt_corrects: [
-                            "5Cr2O7^2- + 34H^+ + 12S -> 10Cr^3+ + 17H2O + 3S4O6^2-",
-                            "5Cr2O72- + 34H+ + 12S -> 10Cr3+ + 17H2O + 3S4O62-",
-                            "5Cr₂O₇²⁻ + 34H⁺ + 12S -> 10Cr³⁺ + 17H₂O + 3S₄O₆²⁻",
-                            "5Cr₂O₇²⁻ + 34H⁺ + 12S &rarr; 10Cr³⁺ + 17H₂O + 3S₄O₆²⁻",
-                            "12S + 5Cr₂O₇²⁻ + 34H⁺ &rarr; 10Cr³⁺ + 17H₂O + 3S₄O₆²⁻",
-                            "5Cr2O7(2-) + 34H(+) + 12S -> 10Cr(3+) + 17H2O + 3S4O6(2-)"
-                        ],
+                        type: "dragdrop",
+                        equation_info: "Reaction: Cr₂O₇²⁻ + S &rarr; Cr³⁺ + S₄O₆²⁻",
+                        equation_text: "Combine and balance completely:",
+                        drag_pool: ["10Cr³⁺", "12S", "5Cr₂O₇²⁻", "3S₄O₆²⁻", "34H⁺", "17H₂O"],
+                        correct_reactants: ["5Cr₂O₇²⁻", "34H⁺", "12S"],
+                        correct_products: ["10Cr³⁺", "17H₂O", "3S₄O₆²⁻"],
                         hint: "Oxidation: 4S &rarr; S₄O₆²⁻ + 2e⁻ (multiply by 3 for 6e⁻, but wait: 4S &rarr; S₄O₆²⁻ + 2e⁻. Combined is 12S &rarr; 3S₄O₆²⁻ + 6e⁻, combined electrons need to be 30). Look closely at the stoichiometry!",
                         user_answered: null,
                         attempts: 0
@@ -658,33 +653,24 @@
                 questions: [
                     {
                         id: "p7q1",
+                        type: "dragdrop",
                         equation_info: "Reaction 1: MnO₄⁻ + C₂O₄²⁻ &rarr; CO₃²⁻ + MnO₂",
-                        equation_text: "Fully balanced redox equation:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p7q1' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p7q1' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
-                        correct: "2MnO₄⁻ + 2H₂O + 3C₂O₄²⁻ &rarr; 2MnO₂ + 4H⁺ + 6CO₃²⁻",
-                        alt_corrects: [
-                            "2MnO4^- + 2H2O + 3C2O4^2- -> 2MnO2 + 4H^+ + 6CO3^2-",
-                            "2MnO4- + 2H2O + 3C2O42- -> 2MnO2 + 4H+ + 6CO32-",
-                            "2MnO₄⁻ + 2H₂O + 3C₂O₄²⁻ -> 2MnO₂ + 4H⁺ + 6CO₃²⁻",
-                            "2MnO₄⁻ + 2H₂O + 3C₂O₄²⁻ &rarr; 2MnO₂ + 4H⁺ + 6CO₃²⁻",
-                            "2MnO4(-) + 2H2O + 3C2O4(2-) -> 2MnO2 + 4H(+) + 6CO3(2-)"
-                        ],
+                        equation_text: "Drag and drop to assemble the fully balanced equation:",
+                        drag_pool: ["2MnO₂", "2MnO₄⁻", "3C₂O₄²⁻", "4H⁺", "6CO₃²⁻", "2H₂O"],
+                        correct_reactants: ["2MnO₄⁻", "2H₂O", "3C₂O₄²⁻"],
+                        correct_products: ["2MnO₂", "4H⁺", "6CO₃²⁻"],
                         hint: "First split and balance individually. Note that the final coefficients are 2, 2, 3 on reactants and 2, 4, 6 on products side.",
                         user_answered: null,
                         attempts: 0
                     },
                     {
                         id: "p7q2",
+                        type: "dragdrop",
                         equation_info: "Reaction 2: Cr³⁺ + MnO₄⁻ &rarr; MnO₂ + Cr₂O₇²⁻",
-                        equation_text: "Fully balanced redox equation:<br><div class='flex items-center gap-2 md:gap-4 mt-2 w-full'><input type='text' id='input_reactants_p7q2' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Reactants'> <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0'>&rarr;</span> <input type='text' id='input_products_p7q2' class='flex-1 min-w-0 border-2 border-dashed border-gray-300 rounded px-2 py-2 font-mono text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none text-sm md:text-base' placeholder='Products'></div>",
-                        correct: "2MnO₄⁻ + 2Cr³⁺ + 3H₂O &rarr; 2MnO₂ + Cr₂O₇²⁻ + 6H⁺",
-                        alt_corrects: [
-                            "2MnO4^- + 2Cr^3+ + 3H2O -> 2MnO2 + Cr2O7^2- + 6H^+",
-                            "2MnO4- + 2Cr3+ + 3H2O -> 2MnO2 + Cr2O72- + 6H+",
-                            "2MnO₄⁻ + 2Cr³⁺ + 3H₂O -> 2MnO₂ + Cr₂O₇²⁻ + 6H⁺",
-                            "2MnO₄⁻ + 2Cr³⁺ + 3H₂O &rarr; 2MnO₂ + Cr₂O₇²⁻ + 6H⁺",
-                            "2Cr³⁺ + 2MnO₄⁻ + 3H₂O &rarr; Cr₂O₇²⁻ + 2MnO₂ + 6H⁺",
-                            "2MnO4(-) + 2Cr(3+) + 3H2O -> 2MnO2 + Cr2O7(2-) + 6H(+)"
-                        ],
+                        equation_text: "Drag and drop to assemble the fully balanced equation:",
+                        drag_pool: ["2MnO₂", "2MnO₄⁻", "3H₂O", "6H⁺", "2Cr³⁺", "Cr₂O₇²⁻"],
+                        correct_reactants: ["2MnO₄⁻", "2Cr³⁺", "3H₂O"],
+                        correct_products: ["2MnO₂", "Cr₂O₇²⁻", "6H⁺"],
                         hint: "Reduction: MnO₄⁻ + 4H⁺ + 3e⁻ &rarr; MnO₂ + 2H₂O. Oxidation: 2Cr³⁺ + 7H₂O &rarr; Cr₂O₇²⁻ + 14H⁺ + 6e⁻. Balance electrons by multiplying the reduction half by 2, and add together.",
                         user_answered: null,
                         attempts: 0
@@ -697,7 +683,8 @@
         let state = {
             currentPart: 1,
             userScores: {}, // Format: { question_id: true/false }
-            completedParts: [] // Keep track of progress
+            completedParts: [], // Keep track of progress
+            savedAnswers: {} // Keep track of user text inputs
         };
 
         // APP INITIALIZER
@@ -716,6 +703,7 @@
                     // Ensure compatibility if scheme updated
                     if (!state.userScores) state.userScores = {};
                     if (!state.completedParts) state.completedParts = [];
+                    if (!state.savedAnswers) state.savedAnswers = {};
                 }
             } catch(e) {
                 console.error("Local storage loaded failed: ", e);
@@ -729,6 +717,21 @@
                 console.error("Local storage save failed: ", e);
             }
             updateGlobalStats();
+        }
+
+        function saveCurrentInputs() {
+            if (!state.savedAnswers) state.savedAnswers = {};
+            const currentData = WORKSHEET_DATA[state.currentPart];
+            if (!currentData || !currentData.questions) return;
+            
+            // Save inputs currently on screen before navigating away
+            currentData.questions.forEach(q => {
+                const inputEl = document.getElementById(`input_${q.id}`);
+                if (inputEl) {
+                    state.savedAnswers[q.id] = inputEl.value;
+                }
+            });
+            saveProgress();
         }
 
         // CUSTOM MODAL CONFIRMATION FLOWS (Replaces standard window.confirm)
@@ -749,7 +752,8 @@
             state = {
                 currentPart: 1,
                 userScores: {},
-                completedParts: []
+                completedParts: [],
+                savedAnswers: {}
             };
             saveProgress();
             renderCurrentState();
@@ -767,6 +771,7 @@
         }
 
         function goToHome() {
+            saveCurrentInputs();
             document.getElementById('screen-home').classList.remove('hidden');
             document.getElementById('screen-activity').classList.add('hidden');
             document.getElementById('screen-certificate').classList.add('hidden');
@@ -774,6 +779,8 @@
         }
 
         function jumpToPart(partNumber) {
+            saveCurrentInputs();
+            
             // Check sequence restriction
             if (partNumber > 1 && !state.completedParts.includes(partNumber - 1)) {
                 showToast(`🔒 Part ${partNumber} is locked. Complete previous sections first!`, "red");
@@ -837,18 +844,57 @@
                     infoHtml = `<div class="bg-slate-50 text-slate-700 font-mono text-xs md:text-sm p-3 rounded-lg border border-slate-200 mb-3 leading-relaxed">${q.equation_info}</div>`;
                 }
 
+                let inputAreaHtml = "";
+                if (q.type === 'dragdrop') {
+                    let poolItemsHtml = "";
+                    let reactItemsHtml = "";
+                    let prodItemsHtml = "";
+
+                    if (isCorrect) {
+                        q.correct_reactants.forEach((val) => {
+                            reactItemsHtml += `<div class="draggable-pill bg-green-50 border border-green-300 shadow-sm px-3 py-1.5 rounded-lg font-bold text-green-800 select-none" data-value="${val}">${val}</div>`;
+                        });
+                        q.correct_products.forEach((val) => {
+                            prodItemsHtml += `<div class="draggable-pill bg-green-50 border border-green-300 shadow-sm px-3 py-1.5 rounded-lg font-bold text-green-800 select-none" data-value="${val}">${val}</div>`;
+                        });
+                    } else {
+                        q.drag_pool.forEach((val, i) => {
+                            poolItemsHtml += `<div class="draggable-pill bg-white hover:bg-slate-50 border border-gray-300 shadow-sm px-3 py-1.5 rounded-lg cursor-grab active:cursor-grabbing font-bold text-slate-700 select-none transition-transform hover:-translate-y-0.5" draggable="true" ondragstart="drag(event)" ondragend="dragEnd(event)" id="drag_${q.id}_${i}" data-value="${val}">${val}</div>`;
+                        });
+                    }
+
+                    inputAreaHtml = `
+                        <div class="mt-4 space-y-3 w-full bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2" style="${isCorrect ? 'display:none;' : ''}">Drag Pool (Molecules & Ions)</div>
+                            <div class="p-4 bg-white border-2 border-dashed border-gray-300 rounded-lg min-h-[70px] drop-zone flex flex-wrap items-center gap-3 transition-colors" style="${isCorrect ? 'display:none;' : ''}" id="pool_${q.id}" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)">
+                                ${poolItemsHtml}
+                            </div>
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mt-4 mb-2">${isCorrect ? 'Balanced Equation' : 'Assemble Equation'}</div>
+                            <div class="flex items-center gap-2 md:gap-4 w-full flex-col lg:flex-row">
+                                <div class="flex-1 w-full min-w-0 border-2 border-dashed border-gray-300 rounded-lg p-4 drop-zone flex flex-wrap items-center justify-center gap-x-6 gap-y-3 min-h-[90px] transition-colors relative ${isCorrect ? 'bg-green-100 border-green-500' : 'bg-amber-50'}" id="reactants_${q.id}" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)" data-zone="reactants" data-placeholder="Drop Reactants Here">
+                                    ${reactItemsHtml}
+                                </div>
+                                <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0 py-2'>&rarr;</span>
+                                <div class="flex-1 w-full min-w-0 border-2 border-dashed border-gray-300 rounded-lg p-4 drop-zone flex flex-wrap items-center justify-center gap-x-6 gap-y-3 min-h-[90px] transition-colors relative ${isCorrect ? 'bg-green-100 border-green-500' : 'bg-amber-50'}" id="products_${q.id}" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)" data-zone="products" data-placeholder="Drop Products Here">
+                                    ${prodItemsHtml}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    inputAreaHtml = `<div class="text-slate-800 font-semibold text-sm md:text-lg select-all leading-loose">${q.equation_text}</div>`;
+                }
+
                 card.innerHTML = `
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div class="flex-grow space-y-2">
+                    <div class="flex flex-col md:flex-row justify-between gap-4">
+                        <div class="flex-grow space-y-2 w-full">
                             <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Question ${index + 1}</span>
                             ${infoHtml}
-                            <div class="text-slate-800 font-semibold text-sm md:text-lg select-all leading-loose">
-                                ${q.equation_text}
-                            </div>
+                            ${inputAreaHtml}
                         </div>
                         
                         <!-- Actions Controls Side -->
-                        <div class="flex items-center gap-2 md:self-end">
+                        <div class="flex items-center gap-2 md:self-start shrink-0 mt-4 md:mt-0">
                             <button onclick="showHint('${q.id}')" class="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors border border-amber-200" title="Get Help Hint">
                                 💡 Hint
                             </button>
@@ -935,31 +981,55 @@
                 .normalize('NFKC');
         }
 
-        // EVALUATOR FOR INPUT ANSWERS
-        function checkAnswer(questionId) {
-            let userVal = "";
-            const inputEl = document.getElementById(`input_${questionId}`);
-            const reactEl = document.getElementById(`input_reactants_${questionId}`);
-            const prodEl = document.getElementById(`input_products_${questionId}`);
+        function allowDrop(ev) {
+            ev.preventDefault();
+            let dropTarget = ev.target;
+            while(dropTarget && !dropTarget.classList.contains('drop-zone')) {
+                dropTarget = dropTarget.parentElement;
+            }
+            if (dropTarget) dropTarget.classList.add('drag-over');
+        }
 
-            if (inputEl) {
-                userVal = inputEl.value;
-                if (!userVal.trim()) {
-                    showToast("⚠️ Please enter an answer before checking!", "amber");
-                    return;
-                }
-            } else if (reactEl && prodEl) {
-                const rVal = reactEl.value.trim();
-                const pVal = prodEl.value.trim();
-                if (!rVal || !pVal) {
-                    showToast("⚠️ Please enter both reactants and products before checking!", "amber");
-                    return;
-                }
-                userVal = rVal + " -> " + pVal;
-            } else {
-                return;
+        function dragLeave(ev) {
+            let dropTarget = ev.target;
+            while(dropTarget && !dropTarget.classList.contains('drop-zone')) {
+                dropTarget = dropTarget.parentElement;
+            }
+            if (dropTarget) dropTarget.classList.remove('drag-over');
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+            setTimeout(() => { ev.target.classList.add('opacity-50'); }, 0);
+        }
+
+        function dragEnd(ev) {
+            ev.target.classList.remove('opacity-50');
+            document.querySelectorAll('.drop-zone').forEach(el => el.classList.remove('drag-over'));
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            var data = ev.dataTransfer.getData("text");
+            var draggedEl = document.getElementById(data);
+            if (!draggedEl) return;
+            
+            draggedEl.classList.remove('opacity-50');
+
+            let dropTarget = ev.target;
+            while(dropTarget && !dropTarget.classList.contains('drop-zone')) {
+                dropTarget = dropTarget.parentElement;
             }
 
+            if(dropTarget) {
+                dropTarget.classList.remove('drag-over');
+                dropTarget.appendChild(draggedEl);
+            }
+        }
+
+        // EVALUATOR FOR INPUT ANSWERS
+        function checkAnswer(questionId) {
+            // Locate the question from the database first
             let foundQuestion = null;
             let partNum = null;
             for (let part in WORKSHEET_DATA) {
@@ -973,16 +1043,67 @@
 
             if (!foundQuestion) return;
 
-            const userCleaned = cleanText(userVal);
-            const correctCleaned = cleanText(foundQuestion.correct);
-            
-            // Check alternative match strings
-            let isAlternativeMatch = false;
-            if (foundQuestion.alt_corrects) {
-                isAlternativeMatch = foundQuestion.alt_corrects.some(alt => cleanText(alt) === userCleaned);
+            let userVal = "";
+            const inputEl = document.getElementById(`input_${questionId}`);
+            const reactEl = document.getElementById(`input_reactants_${questionId}`);
+            const prodEl = document.getElementById(`input_products_${questionId}`);
+
+            if (inputEl) {
+                userVal = inputEl.value;
+                if (!userVal.trim()) {
+                    showToast("⚠️ Please enter an answer before checking!", "amber");
+                    return;
+                }
+                // Save immediately when user triggers check
+                if (!state.savedAnswers) state.savedAnswers = {};
+                state.savedAnswers[questionId] = userVal;
+                saveProgress();
+            } else if (reactEl && prodEl) {
+                const rVal = reactEl.value.trim();
+                const pVal = prodEl.value.trim();
+                if (!rVal || !pVal) {
+                    showToast("⚠️ Please enter both reactants and products before checking!", "amber");
+                    return;
+                }
+                userVal = rVal + " -> " + pVal;
+            } else if (foundQuestion.type === 'dragdrop') {
+                // Validation will be handled below specifically for drag & drop
+            } else {
+                return;
             }
 
-            const isCorrect = (userCleaned === correctCleaned) || isAlternativeMatch;
+            let isCorrect = false;
+
+            if (foundQuestion.type === 'dragdrop') {
+                const rZone = document.getElementById(`reactants_${questionId}`);
+                const pZone = document.getElementById(`products_${questionId}`);
+                
+                const rPills = Array.from(rZone.querySelectorAll('.draggable-pill')).map(p => cleanText(p.getAttribute('data-value'))).sort();
+                const pPills = Array.from(pZone.querySelectorAll('.draggable-pill')).map(p => cleanText(p.getAttribute('data-value'))).sort();
+                
+                const correctR = [...foundQuestion.correct_reactants].map(v => cleanText(v)).sort();
+                const correctP = [...foundQuestion.correct_products].map(v => cleanText(v)).sort();
+                
+                const isRCorrect = JSON.stringify(rPills) === JSON.stringify(correctR);
+                const isPCorrect = JSON.stringify(pPills) === JSON.stringify(correctP);
+                
+                isCorrect = isRCorrect && isPCorrect;
+
+                if (!isCorrect && rPills.length === 0 && pPills.length === 0) {
+                    showToast("⚠️ Please drag components into the Reactants and Products areas!", "amber");
+                    return;
+                }
+            } else {
+                const userCleaned = cleanText(userVal);
+                const correctCleaned = cleanText(foundQuestion.correct);
+                
+                let isAlternativeMatch = false;
+                if (foundQuestion.alt_corrects) {
+                    isAlternativeMatch = foundQuestion.alt_corrects.some(alt => cleanText(alt) === userCleaned);
+                }
+                isCorrect = (userCleaned === correctCleaned) || isAlternativeMatch;
+            }
+
             const statusDiv = document.getElementById(`status_${questionId}`);
             const statusIcon = document.getElementById(`status_icon_${questionId}`);
             const statusText = document.getElementById(`status_text_${questionId}`);
@@ -1009,6 +1130,21 @@
                     prodEl.classList.remove('bg-amber-50', 'border-gray-300', 'border-red-500', 'bg-red-50');
                     reactEl.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
                     prodEl.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+                } else if (foundQuestion.type === 'dragdrop') {
+                    const rZone = document.getElementById(`reactants_${questionId}`);
+                    const pZone = document.getElementById(`products_${questionId}`);
+                    const pool = document.getElementById(`pool_${questionId}`);
+                    
+                    rZone.classList.remove('bg-amber-50', 'border-gray-300', 'border-red-500', 'bg-red-50');
+                    pZone.classList.remove('bg-amber-50', 'border-gray-300', 'border-red-500', 'bg-red-50');
+                    rZone.classList.add('bg-green-100', 'border-green-500');
+                    pZone.classList.add('bg-green-100', 'border-green-500');
+                    
+                    // Lock items
+                    rZone.querySelectorAll('.draggable-pill').forEach(p => { p.draggable = false; p.classList.add('bg-green-50', 'border-green-300', 'text-green-800'); p.classList.remove('bg-white', 'text-slate-700', 'cursor-grab', 'active:cursor-grabbing'); });
+                    pZone.querySelectorAll('.draggable-pill').forEach(p => { p.draggable = false; p.classList.add('bg-green-50', 'border-green-300', 'text-green-800'); p.classList.remove('bg-white', 'text-slate-700', 'cursor-grab', 'active:cursor-grabbing'); });
+                    pool.style.display = 'none';
+                    pool.previousElementSibling.style.display = 'none'; // hide title
                 }
                 
                 const checkBtn = document.getElementById(`btn_check_${questionId}`);
@@ -1031,6 +1167,17 @@
                 } else if (reactEl && prodEl) {
                     reactEl.classList.add('border-red-500', 'bg-red-50');
                     prodEl.classList.add('border-red-500', 'bg-red-50');
+                } else if (foundQuestion.type === 'dragdrop') {
+                    const rZone = document.getElementById(`reactants_${questionId}`);
+                    const pZone = document.getElementById(`products_${questionId}`);
+                    rZone.classList.add('border-red-500', 'bg-red-50');
+                    pZone.classList.add('border-red-500', 'bg-red-50');
+                    setTimeout(() => {
+                        if(!rZone.classList.contains('bg-green-100')) {
+                            rZone.classList.remove('border-red-500', 'bg-red-50');
+                            pZone.classList.remove('border-red-500', 'bg-red-50');
+                        }
+                    }, 2000);
                 }
                 showToast("❌ Incorrect balance. Need a boost? Use the 'Hint' button!", "red");
             }
@@ -1067,6 +1214,8 @@
 
         // NEXT STEP ROUTER
         function goToNextPart() {
+            saveCurrentInputs();
+            
             // Hide the success panel for next reuse
             document.getElementById('part-success-panel').classList.add('hidden');
             
@@ -1135,8 +1284,9 @@
 
         // INPUT VALUE UTILITY
         function getSavedInputValue(id) {
-            const input = document.getElementById(`input_${id}`);
-            if (input) return input.value;
+            if (state.savedAnswers && state.savedAnswers[id] !== undefined) {
+                return state.savedAnswers[id];
+            }
             return "";
         }
 
