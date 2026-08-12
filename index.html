@@ -8,11 +8,6 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Mobile Drag & Drop Polyfill for Touch Devices -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
-    <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/scroll-behaviour.min.js"></script>
-    
     <script>
         tailwind.config = {
             theme: {
@@ -89,6 +84,17 @@
         .draggable-pill {
             touch-action: none;
         }
+
+        .can-drag {
+            touch-action: none; /* Prevents scroll on mobile when dragging starts */
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .can-drag:active {
+            cursor: grabbing;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen text-slate-800 flex flex-col justify-between">
@@ -115,7 +121,7 @@
                     <span id="global-score-badge" class="font-bold text-chemistry-secondary bg-green-50 px-2 py-1 rounded">0/23</span>
                 </div>
                 <div class="h-4 w-px bg-gray-200"></div>
-                <button onclick="resetProgressWithConfirmation()" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-2.5 py-1.5 rounded-md font-semibold transition-colors">
+                <button aria-label="Reset overall progress" onclick="resetProgressWithConfirmation()" class="text-xs bg-red-50 hover:bg-red-100 text-red-600 px-2.5 py-1.5 rounded-md font-semibold transition-colors">
                     Reset Progress
                 </button>
             </div>
@@ -333,7 +339,7 @@
                 <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
                     <span>📖</span> Redox Balancing Guide (Acidic Medium)
                 </h3>
-                <button onclick="toggleInstructionsModal(false)" class="text-gray-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
+                <button aria-label="Close guide" onclick="toggleInstructionsModal(false)" class="text-gray-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
             </div>
             <div class="p-6 space-y-6 text-sm text-slate-600 leading-relaxed">
                 <p>
@@ -424,7 +430,7 @@
     </div>
 
     <!-- TOAST NOTIFICATION SYSTEM -->
-    <div id="toast" class="fixed bottom-4 right-4 z-50 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 text-sm max-w-sm flex items-center gap-3">
+    <div id="toast" class="fixed bottom-4 right-4 z-50 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-2xl transform translate-y-20 opacity-0 transition-all duration-300 text-sm max-w-sm flex items-center gap-3" aria-live="polite">
         <span id="toast-icon">✨</span>
         <span id="toast-text">Success message here!</span>
     </div>
@@ -438,14 +444,114 @@
 
     <!-- APP ENGINE SCRIPT -->
     <script>
-        // INIT MOBILE DRAG AND DROP POLYFILL
-        MobileDragDrop.polyfill({
-            dragImageTranslateOverride: MobileDragDrop.scrollBehaviourDragImageTranslateOverride
+        // NATIVE POINTER EVENTS DRAG ENGINE
+        let activeDragElement = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        let currentDropTarget = null;
+        let dragOriginalParent = null;
+        let dragOriginalNextSibling = null;
+
+        document.addEventListener('pointerdown', (e) => {
+            const pill = e.target.closest('.can-drag');
+            if (!pill) return;
+
+            // Only process main button clicks (left click/primary touch)
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+            e.preventDefault(); // Stop text selection
+            
+            activeDragElement = pill;
+            dragOriginalParent = pill.parentElement;
+            dragOriginalNextSibling = pill.nextSibling;
+            
+            // Calculate pointer offset within the element
+            const rect = pill.getBoundingClientRect();
+            dragOffsetX = e.clientX - rect.left;
+            dragOffsetY = e.clientY - rect.top;
+
+            // Lock dimensions and configure for absolute visual drag
+            pill.style.width = `${rect.width}px`;
+            pill.style.height = `${rect.height}px`;
+            pill.style.position = 'fixed';
+            pill.style.zIndex = '9999';
+            pill.style.pointerEvents = 'none'; // Let pointer events pass through to find drop zones
+            pill.style.transition = 'none'; // Prevent visual layout sluggishness
+            pill.classList.add('opacity-90', 'scale-110', 'shadow-xl');
+            
+            // Move to body to escape parent clipping containers
+            document.body.appendChild(pill);
+            movePill(e.clientX, e.clientY);
+
+            // Bind move and end tracking to the entire document
+            document.addEventListener('pointermove', handlePointerMove, { passive: false });
+            document.addEventListener('pointerup', handlePointerEnd);
+            document.addEventListener('pointercancel', handlePointerEnd);
         });
-        
-        window.addEventListener('touchmove', function() {}, {passive: false});
-        // Prevent default touch behaviors (like scrolling) during active drag operations
-        window.addEventListener('touchmove', function() {}, {passive: false});
+
+        function handlePointerMove(e) {
+            if (!activeDragElement) return;
+            e.preventDefault(); // Prevent touch scrolling during active drag
+
+            movePill(e.clientX, e.clientY);
+
+            // Find elements under the cursor
+            const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+            const dropZone = elemBelow ? elemBelow.closest('.drop-zone') : null;
+
+            if (currentDropTarget && currentDropTarget !== dropZone) {
+                currentDropTarget.classList.remove('drag-over');
+            }
+
+            if (dropZone) {
+                dropZone.classList.add('drag-over');
+                currentDropTarget = dropZone;
+            } else {
+                currentDropTarget = null;
+            }
+        }
+
+        function movePill(x, y) {
+            activeDragElement.style.left = `${x - dragOffsetX}px`;
+            activeDragElement.style.top = `${y - dragOffsetY}px`;
+        }
+
+        function handlePointerEnd(e) {
+            if (!activeDragElement) return;
+
+            document.removeEventListener('pointermove', handlePointerMove);
+            document.removeEventListener('pointerup', handlePointerEnd);
+            document.removeEventListener('pointercancel', handlePointerEnd);
+
+            // Reset positioning & inline styles
+            activeDragElement.style.position = '';
+            activeDragElement.style.zIndex = '';
+            activeDragElement.style.left = '';
+            activeDragElement.style.top = '';
+            activeDragElement.style.width = '';
+            activeDragElement.style.height = '';
+            activeDragElement.style.pointerEvents = '';
+            activeDragElement.style.transition = '';
+            activeDragElement.classList.remove('opacity-90', 'scale-110', 'shadow-xl');
+
+            // Snap logic: drop into target or return home
+            if (currentDropTarget) {
+                currentDropTarget.appendChild(activeDragElement);
+                currentDropTarget.classList.remove('drag-over');
+            } else {
+                if (dragOriginalNextSibling) {
+                    dragOriginalParent.insertBefore(activeDragElement, dragOriginalNextSibling);
+                } else {
+                    dragOriginalParent.appendChild(activeDragElement);
+                }
+            }
+
+            // Cleanup state flags
+            activeDragElement = null;
+            currentDropTarget = null;
+            dragOriginalParent = null;
+            dragOriginalNextSibling = null;
+        }
 
         // ENDLESS MODE DYNAMIC QUESTION POOL
         const ENDLESS_POOLS = {
@@ -546,9 +652,9 @@
                 instructions: "Fill in the blank boxes with the correct coefficient to balance atoms other than oxygen and hydrogen.",
                 example: "I₂ &rarr; <strong class='text-red-600'>2</strong>I<sup>-</sup>",
                 questions: [
-                    { id: "p1q1", equation_text: "C₂O₄²⁻ &rarr; <input type='text' id='input_p1q1' class='w-16 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='?'> CO₂", correct: "2", hint: "Look at the number of carbon atoms on the left side (reactant). There are 2 Carbon atoms in C₂O₄²⁻. How many CO₂ are needed on the right to match?" },
-                    { id: "p1q2", equation_text: "N₂O₄ &rarr; <input type='text' id='input_p1q2' class='w-16 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='?'> NO₃⁻", correct: "2", hint: "Count the Nitrogen (N) atoms. Reactant has N₂. Add coefficient to products (NO₃⁻) to balance Nitrogen first." },
-                    { id: "p1q3", equation_text: "<input type='text' id='input_p1q3' class='w-16 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='?'> HNO₃ &rarr; NH₄NO₃", correct: "2", hint: "Watch out! One molecule of NH₄NO₃ contains TWO Nitrogen atoms. How many HNO₃ do you need on the left to have 2 Nitrogens?" }
+                    { id: "p1q1", equation_text: "C₂O₄²⁻ &rarr; <input type='text' id='input_p1q1' aria-label='Equation coefficient' class='w-16 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='?'> CO₂", correct: "2", hint: "Look at the number of carbon atoms on the left side (reactant). There are 2 Carbon atoms in C₂O₄²⁻. How many CO₂ are needed on the right to match?" },
+                    { id: "p1q2", equation_text: "N₂O₄ &rarr; <input type='text' id='input_p1q2' aria-label='Equation coefficient' class='w-16 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='?'> NO₃⁻", correct: "2", hint: "Count the Nitrogen (N) atoms. Reactant has N₂. Add coefficient to products (NO₃⁻) to balance Nitrogen first." },
+                    { id: "p1q3", equation_text: "<input type='text' id='input_p1q3' aria-label='Equation coefficient' class='w-16 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='?'> HNO₃ &rarr; NH₄NO₃", correct: "2", hint: "Watch out! One molecule of NH₄NO₃ contains TWO Nitrogen atoms. How many HNO₃ do you need on the left to have 2 Nitrogens?" }
                 ]
             },
             2: {
@@ -556,9 +662,9 @@
                 instructions: "Fill in the blank boxes with the correct number of water molecules (e.g., 3H₂O). Remember, you balance oxygen in acidic medium by adding H₂O molecules.",
                 example: "Al₂O₃ &rarr; 2Al + <strong class='text-red-600'>3H₂O</strong>",
                 questions: [
-                    { id: "p2q1", equation_text: "Cl₂ + <input type='text' id='input_p2q1' class='w-28 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 3H2O'> &rarr; 2ClO₃⁻", correct: "6H₂O", alt_corrects: ["6H2O", "6 h2o", "6 H2O", "6H₂O"], hint: "The products have 2ClO₃⁻, which means 2 × 3 = 6 Oxygen atoms on the right side. How many water molecules are needed on the left?" },
-                    { id: "p2q2", equation_text: "Fe₂O₃ &rarr; 2Fe + <input type='text' id='input_p2q2' class='w-28 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 2H2O'>", correct: "3H₂O", alt_corrects: ["3H2O", "3 h2o", "3 H2O", "3H₂O"], hint: "Look at the reactant side: Fe₂O₃ has 3 Oxygen atoms. The product side is deficient in oxygen. How many water molecules are needed?" },
-                    { id: "p2q3", equation_text: "C₂O₄²⁻ + <input type='text' id='input_p2q3' class='w-28 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 3H2O'> &rarr; 2CO₃²⁻", correct: "2H₂O", alt_corrects: ["2H2O", "2 h2o", "2 H2O", "2H₂O"], hint: "Products side has 2CO₃²⁻ (total of 2 × 3 = 6 Oxygen atoms). Reactants side has C₂O₄²⁻ (4 Oxygen atoms). You need to add 2 more Oxygen atoms." }
+                    { id: "p2q1", equation_text: "Cl₂ + <input type='text' id='input_p2q1' aria-label='Equation coefficient' class='w-28 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 3H2O'> &rarr; 2ClO₃⁻", correct: "6H₂O", alt_corrects: ["6H2O", "6 h2o", "6 H2O", "6H₂O"], hint: "The products have 2ClO₃⁻, which means 2 × 3 = 6 Oxygen atoms on the right side. How many water molecules are needed on the left?" },
+                    { id: "p2q2", equation_text: "Fe₂O₃ &rarr; 2Fe + <input type='text' id='input_p2q2' aria-label='Equation coefficient' class='w-28 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 2H2O'>", correct: "3H₂O", alt_corrects: ["3H2O", "3 h2o", "3 H2O", "3H₂O"], hint: "Look at the reactant side: Fe₂O₃ has 3 Oxygen atoms. The product side is deficient in oxygen. How many water molecules are needed?" },
+                    { id: "p2q3", equation_text: "C₂O₄²⁻ + <input type='text' id='input_p2q3' aria-label='Equation coefficient' class='w-28 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 3H2O'> &rarr; 2CO₃²⁻", correct: "2H₂O", alt_corrects: ["2H2O", "2 h2o", "2 H2O", "2H₂O"], hint: "Products side has 2CO₃²⁻ (total of 2 × 3 = 6 Oxygen atoms). Reactants side has C₂O₄²⁻ (4 Oxygen atoms). You need to add 2 more Oxygen atoms." }
                 ]
             },
             3: {
@@ -566,9 +672,9 @@
                 instructions: "Fill in the blank boxes with the correct number of hydrogen ions (e.g. 14H⁺). Hydrogen is balanced in acidic solution by adding H⁺ ions to the deficient side.",
                 example: "Zn + 4H₂O &rarr; Zn(OH)₄²⁻ + <strong class='text-red-600'>4H⁺</strong>",
                 questions: [
-                    { id: "p3q1", equation_text: "Cr₂O₇²⁻ + <input type='text' id='input_p3q1' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 4H+'> &rarr; 2Cr³⁺ + 7H₂O", correct: "14H⁺", alt_corrects: ["14H+", "14h+", "14 H+", "14H⁺"], hint: "The product side has 7H₂O, which contains 7 × 2 = 14 Hydrogen atoms. How many H⁺ ions must be added to the reactant side?" },
-                    { id: "p3q2", equation_text: "NO₃⁻ + <input type='text' id='input_p3q2' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 4H+'> &rarr; NH₄⁺ + 3H₂O", correct: "10H⁺", alt_corrects: ["10H+", "10h+", "10 H+", "10H⁺"], hint: "Count total Hydrogen on the products side: NH₄⁺ has 4 H, and 3H₂O has 6 H (3×2). Total of 4 + 6 = 10 H atoms. How many H⁺ are needed?" },
-                    { id: "p3q3", equation_text: "CrO₂⁻ + 2H₂O &rarr; CrO₄²⁻ + <input type='text' id='input_p3q3' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 2H+'>", correct: "4H⁺", alt_corrects: ["4H+", "4h+", "4 H+", "4H⁺"], hint: "Count total Hydrogen on the reactants side: 2H₂O has 4 H. How many H⁺ are needed on the product side to balance it?" }
+                    { id: "p3q1", equation_text: "Cr₂O₇²⁻ + <input type='text' id='input_p3q1' aria-label='Equation coefficient' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 4H+'> &rarr; 2Cr³⁺ + 7H₂O", correct: "14H⁺", alt_corrects: ["14H+", "14h+", "14 H+", "14H⁺"], hint: "The product side has 7H₂O, which contains 7 × 2 = 14 Hydrogen atoms. How many H⁺ ions must be added to the reactant side?" },
+                    { id: "p3q2", equation_text: "NO₃⁻ + <input type='text' id='input_p3q2' aria-label='Equation coefficient' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 4H+'> &rarr; NH₄⁺ + 3H₂O", correct: "10H⁺", alt_corrects: ["10H+", "10h+", "10 H+", "10H⁺"], hint: "Count total Hydrogen on the products side: NH₄⁺ has 4 H, and 3H₂O has 6 H (3×2). Total of 4 + 6 = 10 H atoms. How many H⁺ are needed?" },
+                    { id: "p3q3", equation_text: "CrO₂⁻ + 2H₂O &rarr; CrO₄²⁻ + <input type='text' id='input_p3q3' aria-label='Equation coefficient' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 2H+'>", correct: "4H⁺", alt_corrects: ["4H+", "4h+", "4 H+", "4H⁺"], hint: "Count total Hydrogen on the reactants side: 2H₂O has 4 H. How many H⁺ are needed on the product side to balance it?" }
                 ]
             },
             4: {
@@ -576,12 +682,12 @@
                 instructions: "Fill in the blank boxes with the correct number of electrons (e.g. 2e⁻ or 10e⁻) to balance overall electrical charges.",
                 example: "BrO₃⁻ + 6H⁺ + <strong class='text-red-600'>6e⁻</strong> &rarr; Br⁻ + 3H₂O",
                 questions: [
-                    { id: "p4q1", equation_text: "H₂O₂ + 2H⁺ + <input type='text' id='input_p4q1' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'> &rarr; 2H₂O", correct: "2e⁻", alt_corrects: ["2e-", "2e", "2e⁻", "2 e-"], hint: "Product side (2H₂O) is completely neutral (charge = 0). Reactant side has H₂O₂ (0) + 2H⁺ (+2) = total charge of +2." },
-                    { id: "p4q2", equation_text: "Br₂ + 6H₂O &rarr; 2BrO₃⁻ + 12H⁺ + <input type='text' id='input_p4q2' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'>", correct: "10e⁻", alt_corrects: ["10e-", "10e", "10e⁻", "10 e-"], hint: "Left side is neutral (0). Right side has 2BrO₃⁻ (2 × -1 = -2) + 12H⁺ (+12) = total charge of +10." },
-                    { id: "p4q3", equation_text: "2IO₃⁻ + 12H⁺ + <input type='text' id='input_p4q3' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'> &rarr; I₂ + 6H₂O", correct: "10e⁻", alt_corrects: ["10e-", "10e", "10e⁻", "10 e-"], hint: "Product side is neutral (0). Reactant side has 2IO₃⁻ (-2) and 12H⁺ (+12) which equals +10." },
-                    { id: "p4q4", equation_text: "H₂O₂ &rarr; O₂ + 2H⁺ + <input type='text' id='input_p4q4' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'>", correct: "2e⁻", alt_corrects: ["2e-", "2e", "2e⁻", "2 e-"], hint: "Left side is neutral (0). Right side has O₂ (0) and 2H⁺ (+2)." },
-                    { id: "p4q5", equation_text: "S₂O₃²⁻ + 5H₂O &rarr; 2SO₄²⁻ + 10H⁺ + <input type='text' id='input_p4q5' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'>", correct: "8e⁻", alt_corrects: ["8e-", "8e", "8e⁻", "8 e-"], hint: "Reactant side charge is -2. Product side charge currently is 2SO₄²⁻ (-4) and 10H⁺ (+10) = net +6." },
-                    { id: "p4q6", equation_text: "2S₂O₃³⁻ &rarr; S₄O₆²⁻ + <input type='text' id='input_p4q6' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'>", correct: "4e⁻", alt_corrects: ["4e-", "4e", "4e⁻", "4 e-"], hint: "Reactant side charge is 2 × -3 = -6. Product side charge is -2." }
+                    { id: "p4q1", equation_text: "H₂O₂ + 2H⁺ + <input type='text' id='input_p4q1' aria-label='Equation coefficient' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'> &rarr; 2H₂O", correct: "2e⁻", alt_corrects: ["2e-", "2e", "2e⁻", "2 e-"], hint: "Product side (2H₂O) is completely neutral (charge = 0). Reactant side has H₂O₂ (0) + 2H⁺ (+2) = total charge of +2." },
+                    { id: "p4q2", equation_text: "Br₂ + 6H₂O &rarr; 2BrO₃⁻ + 12H⁺ + <input type='text' id='input_p4q2' aria-label='Equation coefficient' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'>", correct: "10e⁻", alt_corrects: ["10e-", "10e", "10e⁻", "10 e-"], hint: "Left side is neutral (0). Right side has 2BrO₃⁻ (2 × -1 = -2) + 12H⁺ (+12) = total charge of +10." },
+                    { id: "p4q3", equation_text: "2IO₃⁻ + 12H⁺ + <input type='text' id='input_p4q3' aria-label='Equation coefficient' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'> &rarr; I₂ + 6H₂O", correct: "10e⁻", alt_corrects: ["10e-", "10e", "10e⁻", "10 e-"], hint: "Product side is neutral (0). Reactant side has 2IO₃⁻ (-2) and 12H⁺ (+12) which equals +10." },
+                    { id: "p4q4", equation_text: "H₂O₂ &rarr; O₂ + 2H⁺ + <input type='text' id='input_p4q4' aria-label='Equation coefficient' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'>", correct: "2e⁻", alt_corrects: ["2e-", "2e", "2e⁻", "2 e-"], hint: "Left side is neutral (0). Right side has O₂ (0) and 2H⁺ (+2)." },
+                    { id: "p4q5", equation_text: "S₂O₃²⁻ + 5H₂O &rarr; 2SO₄²⁻ + 10H⁺ + <input type='text' id='input_p4q5' aria-label='Equation coefficient' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'>", correct: "8e⁻", alt_corrects: ["8e-", "8e", "8e⁻", "8 e-"], hint: "Reactant side charge is -2. Product side charge currently is 2SO₄²⁻ (-4) and 10H⁺ (+10) = net +6." },
+                    { id: "p4q6", equation_text: "2S₂O₃³⁻ &rarr; S₄O₆²⁻ + <input type='text' id='input_p4q6' aria-label='Equation coefficient' class='w-24 border-2 border-dashed border-gray-300 rounded px-2 py-1 text-center font-bold focus:border-blue-500 bg-amber-50 focus:outline-none' placeholder='e.g., 6e-'>", correct: "4e⁻", alt_corrects: ["4e-", "4e", "4e⁻", "4 e-"], hint: "Reactant side charge is 2 × -3 = -6. Product side charge is -2." }
                 ]
             },
             5: {
@@ -776,22 +882,22 @@
                         q.correct_reactants.forEach((val) => { reactItemsHtml += `<div class="draggable-pill bg-green-50 border border-green-300 shadow-sm px-3 py-1.5 rounded-lg font-bold text-green-800 select-none" data-value="${val}">${val}</div>`; });
                         q.correct_products.forEach((val) => { prodItemsHtml += `<div class="draggable-pill bg-green-50 border border-green-300 shadow-sm px-3 py-1.5 rounded-lg font-bold text-green-800 select-none" data-value="${val}">${val}</div>`; });
                     } else {
-                        q.drag_pool.forEach((val, i) => { poolItemsHtml += `<div class="draggable-pill bg-white hover:bg-slate-50 border border-gray-300 shadow-sm px-3 py-1.5 rounded-lg cursor-grab active:cursor-grabbing font-bold text-slate-700 select-none transition-transform hover:-translate-y-0.5" draggable="true" ondragstart="drag(event)" ondragend="dragEnd(event)" id="drag_${q.id}_${i}" data-value="${val}">${val}</div>`; });
+                        q.drag_pool.forEach((val, i) => { poolItemsHtml += `<div class="draggable-pill can-drag bg-white hover:bg-slate-50 border border-gray-300 shadow-sm px-3 py-1.5 rounded-lg font-bold text-slate-700 transition-all duration-200" id="drag_${q.id}_${i}" data-value="${val}">${val}</div>`; });
                     }
 
                     inputAreaHtml = `
                         <div class="mt-4 space-y-3 w-full bg-slate-50 p-4 rounded-xl border border-slate-200">
                             <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2" style="${isCorrect ? 'display:none;' : ''}">Drag Pool (Molecules & Ions)</div>
-                            <div class="p-4 bg-white border-2 border-dashed border-gray-300 rounded-lg min-h-[70px] drop-zone flex flex-wrap items-center gap-3 transition-colors" style="${isCorrect ? 'display:none;' : ''}" id="pool_${q.id}" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)">
+                            <div class="p-4 bg-white border-2 border-dashed border-gray-300 rounded-lg min-h-[70px] drop-zone flex flex-wrap items-center gap-3 transition-colors relative" style="${isCorrect ? 'display:none;' : ''}" id="pool_${q.id}">
                                 ${poolItemsHtml}
                             </div>
                             <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mt-4 mb-2">${isCorrect ? 'Balanced Equation' : 'Assemble Equation'}</div>
                             <div class="flex items-center gap-2 md:gap-4 w-full flex-col lg:flex-row">
-                                <div class="flex-1 w-full min-w-0 border-2 border-dashed border-gray-300 rounded-lg p-4 drop-zone flex flex-wrap items-center justify-center gap-x-6 gap-y-3 min-h-[90px] transition-colors relative ${isCorrect ? 'bg-green-100 border-green-500' : 'bg-amber-50'}" id="reactants_${q.id}" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)" data-zone="reactants" data-placeholder="Drop Reactants Here">
+                                <div class="flex-1 w-full min-w-0 border-2 border-dashed border-gray-300 rounded-lg p-4 drop-zone flex flex-wrap items-center justify-center gap-x-6 gap-y-3 min-h-[90px] transition-colors relative ${isCorrect ? 'bg-green-100 border-green-500' : 'bg-amber-50'}" id="reactants_${q.id}" data-zone="reactants" data-placeholder="Drop Reactants Here">
                                     ${reactItemsHtml}
                                 </div>
                                 <span class='text-xl md:text-2xl font-black text-slate-400 shrink-0 py-2'>&rarr;</span>
-                                <div class="flex-1 w-full min-w-0 border-2 border-dashed border-gray-300 rounded-lg p-4 drop-zone flex flex-wrap items-center justify-center gap-x-6 gap-y-3 min-h-[90px] transition-colors relative ${isCorrect ? 'bg-green-100 border-green-500' : 'bg-amber-50'}" id="products_${q.id}" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="drop(event)" data-zone="products" data-placeholder="Drop Products Here">
+                                <div class="flex-1 w-full min-w-0 border-2 border-dashed border-gray-300 rounded-lg p-4 drop-zone flex flex-wrap items-center justify-center gap-x-6 gap-y-3 min-h-[90px] transition-colors relative ${isCorrect ? 'bg-green-100 border-green-500' : 'bg-amber-50'}" id="products_${q.id}" data-zone="products" data-placeholder="Drop Products Here">
                                     ${prodItemsHtml}
                                 </div>
                             </div>
@@ -809,7 +915,7 @@
                             ${inputAreaHtml}
                         </div>
                         <div class="flex items-center gap-2 md:self-start shrink-0 mt-4 md:mt-0">
-                            <button onclick="showHint('${q.id}')" class="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors border border-amber-200" title="Get Help Hint">💡 Hint</button>
+                            <button aria-label="Show hint for Question ${index + 1}" onclick="showHint('${q.id}')" class="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors border border-amber-200" title="Get Help Hint">💡 Hint</button>
                             <button id="btn_check_${q.id}" onclick="checkAnswer('${q.id}')" class="px-5 py-2 font-bold text-sm text-white rounded-lg transition-all ${isCorrect ? 'bg-green-600 hover:bg-green-700' : 'bg-chemistry-primary hover:bg-blue-600'}">
                                 ${isCorrect ? 'Verified ✓' : 'Check'}
                             </button>
@@ -860,46 +966,6 @@
                 .replace(/2-/g, "²⁻").replace(/3-/g, "³⁻")
                 .replace(/1-/g, "⁻").replace(/-\s*/g, "⁻").replace(/\+\s*/g, "⁺")
                 .replace(/e-/g, "e⁻").replace(/\s+/g, "").normalize('NFKC');
-        }
-
-        // DRAG AND DROP HANDLERS
-        function allowDrop(ev) {
-            ev.preventDefault();
-            let dropTarget = ev.target;
-            while(dropTarget && !dropTarget.classList.contains('drop-zone')) { dropTarget = dropTarget.parentElement; }
-            if (dropTarget) dropTarget.classList.add('drag-over');
-        }
-
-        function dragLeave(ev) {
-            let dropTarget = ev.target;
-            while(dropTarget && !dropTarget.classList.contains('drop-zone')) { dropTarget = dropTarget.parentElement; }
-            if (dropTarget) dropTarget.classList.remove('drag-over');
-        }
-
-        function drag(ev) {
-            ev.dataTransfer.setData("text", ev.target.id);
-            setTimeout(() => { ev.target.classList.add('opacity-50'); }, 0);
-        }
-
-        function dragEnd(ev) {
-            ev.target.classList.remove('opacity-50');
-            document.querySelectorAll('.drop-zone').forEach(el => el.classList.remove('drag-over'));
-        }
-
-        function drop(ev) {
-            ev.preventDefault();
-            var data = ev.dataTransfer.getData("text");
-            var draggedEl = document.getElementById(data);
-            if (!draggedEl) return;
-            
-            draggedEl.classList.remove('opacity-50');
-            let dropTarget = ev.target;
-            while(dropTarget && !dropTarget.classList.contains('drop-zone')) { dropTarget = dropTarget.parentElement; }
-
-            if(dropTarget) {
-                dropTarget.classList.remove('drag-over');
-                dropTarget.appendChild(draggedEl);
-            }
         }
 
         // EVALUATOR FOR INPUT ANSWERS
@@ -986,8 +1052,8 @@
                     rZone.classList.add('bg-green-100', 'border-green-500');
                     pZone.classList.add('bg-green-100', 'border-green-500');
                     
-                    rZone.querySelectorAll('.draggable-pill').forEach(p => { p.draggable = false; p.classList.add('bg-green-50', 'border-green-300', 'text-green-800'); p.classList.remove('bg-white', 'text-slate-700', 'cursor-grab', 'active:cursor-grabbing'); });
-                    pZone.querySelectorAll('.draggable-pill').forEach(p => { p.draggable = false; p.classList.add('bg-green-50', 'border-green-300', 'text-green-800'); p.classList.remove('bg-white', 'text-slate-700', 'cursor-grab', 'active:cursor-grabbing'); });
+                    rZone.querySelectorAll('.draggable-pill').forEach(p => { p.classList.add('bg-green-50', 'border-green-300', 'text-green-800'); p.classList.remove('can-drag', 'bg-white', 'text-slate-700', 'hover:-translate-y-0.5', 'hover:bg-slate-50', 'cursor-grab'); });
+                    pZone.querySelectorAll('.draggable-pill').forEach(p => { p.classList.add('bg-green-50', 'border-green-300', 'text-green-800'); p.classList.remove('can-drag', 'bg-white', 'text-slate-700', 'hover:-translate-y-0.5', 'hover:bg-slate-50', 'cursor-grab'); });
                     pool.style.display = 'none';
                     pool.previousElementSibling.style.display = 'none';
                 }
@@ -1085,7 +1151,7 @@
             const containerEl = document.getElementById('endless-question-container');
             
             // Generate the dynamic input box and inject it where [INPUT] marker is
-            const inputBoxHtml = "<input type='text' id='dyn_1' class='dyn-input w-16 mx-1 border-2 border-dashed border-gray-300 rounded text-center font-bold focus:border-purple-500 bg-purple-50 focus:outline-none' placeholder='?'>";
+            const inputBoxHtml = "<input type='text' id='dyn_1' aria-label='Dynamic coefficient' class='dyn-input w-16 mx-1 border-2 border-dashed border-gray-300 rounded text-center font-bold focus:border-purple-500 bg-purple-50 focus:outline-none' placeholder='?'>";
             
             if(containerEl) {
                 if (currentDynamicTemplate.html.includes('[INPUT]')) {
@@ -1149,7 +1215,10 @@
         // CHECK IF ALL SECTION QUESTIONS ARE COMPLETED
         function checkAndToggleSuccessPanel() {
             const currentPartNum = state.currentPart;
+            if (currentPartNum === 8) return; // Prevent checking when on certificate screen
+            
             const currentData = WORKSHEET_DATA[currentPartNum];
+            if (!currentData) return;
             
             const allCorrect = currentData.questions.every(q => state.userScores[q.id] === true);
             const successPanel = document.getElementById('part-success-panel');
